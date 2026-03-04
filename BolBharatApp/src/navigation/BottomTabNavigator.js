@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 
-import HomeScreen from '../screens/HomeScreen';
+import HomeStackNavigator from './HomeStackNavigator';
 import SchemesScreen from '../screens/SchemesScreen';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import FormsScreen from '../screens/FormsScreen';
@@ -30,7 +30,7 @@ export default function BottomTabNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => <TabIcon label="🏠" focused={focused} />,
         }}
