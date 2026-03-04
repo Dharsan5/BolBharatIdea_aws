@@ -29,6 +29,69 @@
 - [ ] Configure AsyncStorage for local persistence
 - [ ] Implement offline manager for caching
 
+#### App Screens/Pages Implementation
+##### Onboarding & Authentication
+- [ ] Welcome/Splash Screen
+- [ ] Language Selection Screen
+- [ ] Phone Authentication Screen (AWS Cognito)
+- [ ] User Profile Setup Screen
+
+##### Home & Navigation
+- [ ] Dashboard/Home Screen
+- [ ] Bottom Tab Navigation Component
+- [ ] Language Switcher Component
+
+##### Voice Interface
+- [ ] Voice Recording Screen with visual feedback
+- [ ] Real-time Transcription Display
+- [ ] Audio Playback Component
+- [ ] Voice Interface Loading States
+
+##### Scheme Matchmaker
+- [ ] Scheme Search/Query Input Screen
+- [ ] Scheme List View with relevance scores
+- [ ] Scheme Detail Page
+- [ ] Saved/Bookmarked Schemes Screen
+- [ ] Eligibility Checker Interface
+
+##### Document Simplifier
+- [ ] Camera Interface for Document Capture
+- [ ] Document Preview Screen
+- [ ] OCR Processing Screen (loading state)
+- [ ] Simplified Document View
+- [ ] Document History List
+
+##### Agentic Form Filling
+- [ ] Form Selection/List Screen
+- [ ] Conversational Question Interface
+- [ ] Form Progress Indicator
+- [ ] Form Preview/Summary Screen
+- [ ] Confirmation Screen
+- [ ] Submission Status Screen
+- [ ] Application Tracking Screen
+
+##### User Profile & Settings
+- [ ] Profile Information Editor
+- [ ] Language Preferences Screen
+- [ ] Location Settings Screen
+- [ ] Demographics Update Screen
+- [ ] Privacy Settings Screen
+- [ ] Offline Mode Toggle
+- [ ] App Tutorial/Help Screen
+
+##### Application Management
+- [ ] Application History List
+- [ ] Application Status Tracking
+- [ ] Application Details Screen
+
+##### Common Components
+- [ ] Offline Mode Indicator Banner
+- [ ] Error Screens
+- [ ] Loading Indicators
+- [ ] Toast Notifications
+- [ ] Help & Support Screen
+- [ ] FAQs Screen
+
 ### Core Features Implementation
 
 #### 1. Multilingual Voice Interface
