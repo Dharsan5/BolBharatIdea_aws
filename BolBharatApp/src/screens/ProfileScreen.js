@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 export default function ProfileScreen() {
@@ -17,7 +18,7 @@ export default function ProfileScreen() {
         {/* User Info */}
         <View style={styles.userCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>👤</Text>
+            <Ionicons name="person" size={48} color={theme.colors.white} />
           </View>
           <Text style={styles.userName}>User Name</Text>
           <Text style={styles.userPhone}>+91 98765 43210</Text>
@@ -28,25 +29,31 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Settings</Text>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>🌐</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="globe-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Language</Text>
               <Text style={styles.settingValue}>Hindi / हिंदी</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>📍</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="location-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Location</Text>
               <Text style={styles.settingValue}>Not set</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <View style={styles.settingItem}>
-            <Text style={styles.settingIcon}>📶</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="wifi-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Offline Mode</Text>
               <Text style={styles.settingValueSecondary}>Save data</Text>
@@ -65,27 +72,33 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Account</Text>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>👤</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="person-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Edit Profile</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>📋</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="list-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>My Applications</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>🔒</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="lock-closed-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Privacy Settings</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -94,27 +107,33 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Help & Support</Text>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>❓</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="help-circle-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>FAQs</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>📞</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="call-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Contact Support</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingIcon}>ℹ️</Text>
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="information-circle-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>About BolBharat</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -166,9 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
   },
-  avatarText: {
-    fontSize: 40,
-  },
   userName: {
     ...theme.typography.h3,
     color: theme.colors.textPrimary,
@@ -196,8 +212,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  settingIcon: {
-    fontSize: 24,
+  settingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: theme.spacing.md,
   },
   settingInfo: {
@@ -214,10 +237,6 @@ const styles = StyleSheet.create({
   },
   settingValueSecondary: {
     ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-  },
-  arrow: {
-    fontSize: 20,
     color: theme.colors.textSecondary,
   },
   footer: {

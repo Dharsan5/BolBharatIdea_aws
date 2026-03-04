@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import AnimatedBlob from '../components/AnimatedBlob';
 
@@ -91,10 +92,10 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerIcon}>
-            <Text style={styles.iconText}>🎤</Text>
+            <Ionicons name="mic-outline" size={20} color={theme.colors.black} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
-            <Text style={styles.iconText}>✏️</Text>
+            <Feather name="edit-2" size={18} color={theme.colors.black} />
           </TouchableOpacity>
         </View>
       </View>
@@ -130,25 +131,33 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.cardsContainer}>
         <TouchableOpacity style={styles.actionCard}>
           <View style={styles.cardIconContainer}>
-            <Text style={styles.cardIconText}>🎵</Text>
+            <Ionicons name="musical-notes" size={24} color={theme.colors.black} />
           </View>
           <View style={styles.cardArrow}>
-            <Text style={styles.arrowText}>↗</Text>
+            <Feather name="arrow-up-right" size={20} color={theme.colors.textSecondary} />
           </View>
           <Text style={styles.actionCardTitle}>Your Voice{'\n'}Clips</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionCard}>
           <View style={styles.cardIconContainer}>
-            <Text style={styles.cardIconText}>📢</Text>
+            <MaterialIcons name="mic-none" size={24} color={theme.colors.black} />
           </View>
           <View style={styles.cardArrow}>
-            <Text style={s
+            <Feather name="arrow-up-right" size={20} color={theme.colors.textSecondary} />
+          </View>
+          <Text style={styles.actionCardTitle}>Rapid Speech{'\n'}Capture</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom Action Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity 
           style={styles.bottomButton}
           onPress={startListening}
           disabled={isListening}
         >
-          <Text style={styles.bottomButtonIcon}>🔄</Text>
+          <Ionicons name="refresh" size={24} color={theme.colors.black} />
         </TouchableOpacity>
 
         <Animated.View style={{ transform: [{ scale: micButtonScale }] }}>
@@ -157,7 +166,11 @@ export default function HomeScreen({ navigation }) {
             onPress={handleMicPress}
           >
             <View style={styles.micButtonInner}>
-              <Text style={styles.micButtonIcon}>🎤</Text>
+              <Ionicons 
+                name={isListening ? "stop" : "mic"} 
+                size={32} 
+                color={theme.colors.white} 
+              />
             </View>
           </TouchableOpacity>
         </Animated.View>
@@ -165,16 +178,8 @@ export default function HomeScreen({ navigation }) {
         <TouchableOpacity 
           style={styles.bottomButton}
           onPress={handleClear}
-        
-          onPress={handleMicPress}
         >
-          <View style={styles.micButtonInner}>
-            <Text style={styles.micButtonIcon}>🎤</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.bottomButton}>
-          <Text style={styles.bottomButtonIcon}>🗑️</Text>
+          <Ionicons name="trash-outline" size={24} color={theme.colors.black} />
         </TouchableOpacity>
       </View>
 
@@ -247,9 +252,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconText: {
-    fontSize: 18,
-  },
   statusContainer: {
     alignItems: 'center',
     paddingVertical: theme.spacing.md,
@@ -260,6 +262,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   blobContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.lg,
+  },
   transcriptContainer: {
     marginHorizontal: theme.spacing.xl,
     paddingVertical: theme.spacing.lg,
@@ -275,11 +282,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     textAlign: 'center',
     lineHeight: 24,
-  },
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.lg,
   },
   poeticTextContainer: {
     paddingHorizontal: theme.spacing.xl,
@@ -319,21 +321,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
-  cardIconText: {
-    fontSize: 20,
-  },
   cardArrow: {
     position: 'absolute',
     top: theme.spacing.lg,
     right: theme.spacing.lg,
   },
-  arrowText: {
-    fontSize: 20,
-    color: theme.colors.textSecondary,
-  },
   actionCardTitle: {
-    ...theme.typography.body1,
-    fontFamily: theme.fontFamilies.medium,
+    ...theme.typography.body2,
+    fontFamily: theme.fontFamilies.semiBold,
     color: theme.colors.textPrimary,
     marginTop: theme.spacing.sm,
   },
@@ -345,10 +340,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.lg,
   },
   bottomButton: {
-    width: Active: {
-    backgroundColor: theme.colors.gray700,
-  },
-  micButton50,
+    width: 50,
     height: 50,
     borderRadius: 25,
     backgroundColor: theme.colors.surface,
@@ -356,9 +348,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  bottomButtonIcon: {
-    fontSize: 20,
   },
   micButton: {
     width: 70,
@@ -373,6 +362,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  micButtonActive: {
+    backgroundColor: theme.colors.gray700,
+  },
   micButtonInner: {
     width: 60,
     height: 60,
@@ -382,9 +374,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.gray300,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  micButtonIcon: {
-    fontSize: 28,
   },
   homeIndicator: {
     width: 134,

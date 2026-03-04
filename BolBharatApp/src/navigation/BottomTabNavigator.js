@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 import HomeStackNavigator from './HomeStackNavigator';
@@ -10,12 +11,6 @@ import FormsScreen from '../screens/FormsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
-
-const TabIcon = ({ label, focused }) => (
-  <Text style={[styles.iconText, focused && styles.iconTextFocused]}>
-    {label}
-  </Text>
-);
 
 export default function BottomTabNavigator() {
   return (
@@ -32,35 +27,45 @@ export default function BottomTabNavigator() {
         name="Home"
         component={HomeStackNavigator}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon label="🏠" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tab.Screen
         name="Schemes"
         component={SchemesScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon label="🎯" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? "bulb" : "bulb-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tab.Screen
         name="Documents"
         component={DocumentsScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon label="📄" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? "document-text" : "document-text-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tab.Screen
         name="Forms"
         component={FormsScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon label="📝" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <MaterialCommunityIcons name={focused ? "file-document-edit" : "file-document-edit-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>
@@ -79,12 +84,5 @@ const styles = StyleSheet.create({
   tabBarLabel: {
     fontFamily: theme.fontFamilies.medium,
     fontSize: 12,
-  },
-  iconText: {
-    fontSize: 24,
-    opacity: 0.5,
-  },
-  iconTextFocused: {
-    opacity: 1,
   },
 });

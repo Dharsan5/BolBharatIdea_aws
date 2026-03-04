@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 export default function FormsScreen() {
@@ -14,7 +15,7 @@ export default function FormsScreen() {
       <ScrollView style={styles.content}>
         {/* Voice Assistant Card */}
         <View style={styles.assistantCard}>
-          <Text style={styles.assistantIcon}>🤖</Text>
+          <MaterialCommunityIcons name="robot-outline" size={48} color={theme.colors.black} />
           <Text style={styles.assistantTitle}>AI Form Assistant</Text>
           <Text style={styles.assistantText}>
             I'll help you fill forms by asking simple questions
@@ -29,33 +30,39 @@ export default function FormsScreen() {
           <Text style={styles.sectionTitle}>Available Forms</Text>
           
           <TouchableOpacity style={styles.formCard}>
-            <Text style={styles.formIcon}>📄</Text>
+            <View style={styles.formIconContainer}>
+              <Ionicons name="document-text-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.formInfo}>
               <Text style={styles.formName}>Ration Card Application</Text>
               <Text style={styles.formNameHindi}>राशन कार्ड आवेदन</Text>
               <Text style={styles.formTime}>~10 minutes</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Ionicons name="arrow-forward" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.formCard}>
-            <Text style={styles.formIcon}>🏥</Text>
+            <View style={styles.formIconContainer}>
+              <Ionicons name="medical-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.formInfo}>
               <Text style={styles.formName}>Health Card Registration</Text>
               <Text style={styles.formNameHindi}>स्वास्थ्य कार्ड पंजीकरण</Text>
               <Text style={styles.formTime}>~15 minutes</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Ionicons name="arrow-forward" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.formCard}>
-            <Text style={styles.formIcon}>🌾</Text>
+            <View style={styles.formIconContainer}>
+              <MaterialCommunityIcons name="sprout-outline" size={24} color={theme.colors.black} />
+            </View>
             <View style={styles.formInfo}>
               <Text style={styles.formName}>Crop Insurance Form</Text>
               <Text style={styles.formNameHindi}>फसल बीमा फॉर्म</Text>
               <Text style={styles.formTime}>~12 minutes</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Ionicons name="arrow-forward" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -98,10 +105,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.xl,
     alignItems: 'center',
   },
-  assistantIcon: {
-    fontSize: 48,
-    marginBottom: theme.spacing.md,
-  },
   assistantTitle: {
     ...theme.typography.h3,
     color: theme.colors.white,
@@ -136,8 +139,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  formIcon: {
-    fontSize: 32,
+  formIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: theme.spacing.md,
   },
   formInfo: {
@@ -155,10 +165,6 @@ const styles = StyleSheet.create({
   },
   formTime: {
     ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-  },
-  arrow: {
-    fontSize: 24,
     color: theme.colors.textSecondary,
   },
   emptyText: {

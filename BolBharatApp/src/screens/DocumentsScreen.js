@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 export default function DocumentsScreen() {
@@ -15,7 +16,7 @@ export default function DocumentsScreen() {
         {/* Camera Card */}
         <TouchableOpacity style={styles.cameraCard}>
           <View style={styles.cameraIcon}>
-            <Text style={styles.iconText}>📷</Text>
+            <Ionicons name="camera" size={48} color={theme.colors.white} />
           </View>
           <Text style={styles.cameraText}>Scan Document</Text>
           <Text style={styles.cameraSubtext}>दस्तावेज़ स्कैन करें</Text>
