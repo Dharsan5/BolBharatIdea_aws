@@ -1,0 +1,139 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Expo
+.expo/
+.expo-shared/
+dist/
+web-build/
+
+# React Native
+# OSX
+.DS_Store
+
+# Android
+BolBharatApp/android/app/build/
+BolBharatApp/android/app/release/
+BolBharatApp/android/.gradle/
+BolBharatApp/android/build/
+BolBharatApp/android/gradle/
+BolBharatApp/android/gradlew
+BolBharatApp/android/gradlew.bat
+BolBharatApp/android/local.properties
+*.apk
+*.aab
+
+# iOS
+BolBharatApp/ios/Pods/
+BolBharatApp/ios/build/
+BolBharatApp/ios/.xcode.env.local
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# AWS
+cdk.out/
+.aws-sam/
+.cdk.staging/
+cdk.context.json
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Build artifacts
+build/
+out/
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+# Serverless directories
+.serverless/
+
+# Lambda build artifacts
+*.zip
+
+# Local DynamoDB
+.dynamodb/
+
+# Misc
+*.pem
+*.key
+*.cert
