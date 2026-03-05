@@ -9,6 +9,7 @@ import {
   Dimensions,
   Easing,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import BolBharatLogo from '../components/BolBharatLogo';
 
@@ -19,61 +20,51 @@ const LANGUAGES = [
     id: 'en',
     name: 'English',
     nativeName: 'English',
-    icon: '🇬🇧',
   },
   {
     id: 'hi',
     name: 'Hindi',
     nativeName: 'हिन्दी',
-    icon: '🇮🇳',
   },
   {
     id: 'ta',
     name: 'Tamil',
     nativeName: 'தமிழ்',
-    icon: '🇮🇳',
   },
   {
     id: 'te',
     name: 'Telugu',
     nativeName: 'తెలుగు',
-    icon: '🇮🇳',
   },
   {
     id: 'kn',
     name: 'Kannada',
     nativeName: 'ಕನ್ನಡ',
-    icon: '🇮🇳',
   },
   {
     id: 'ml',
     name: 'Malayalam',
     nativeName: 'മലയാളം',
-    icon: '🇮🇳',
   },
   {
     id: 'mr',
     name: 'Marathi',
     nativeName: 'मराठी',
-    icon: '🇮🇳',
   },
   {
     id: 'bn',
     name: 'Bengali',
     nativeName: 'বাংলা',
-    icon: '🇮🇳',
   },
   {
     id: 'gu',
     name: 'Gujarati',
     nativeName: 'ગુજરાતી',
-    icon: '🇮🇳',
   },
   {
     id: 'pa',
     name: 'Punjabi',
     nativeName: 'ਪੰਜਾਬੀ',
-    icon: '🇮🇳',
   },
 ];
 
@@ -241,7 +232,13 @@ function LanguageCard({ language, isSelected, onSelect, delay }) {
         activeOpacity={0.7}
       >
         {isSelected && <View style={styles.selectedIndicator} />}
-        <Text style={styles.languageIcon}>{language.icon}</Text>
+        <View style={styles.languageIconContainer}>
+          <Ionicons 
+            name="language-outline" 
+            size={32} 
+            color={isSelected ? colors.black : colors.textSecondary} 
+          />
+        </View>
         <Text style={styles.languageNative}>{language.nativeName}</Text>
         <Text style={styles.languageEnglish}>{language.name}</Text>
       </TouchableOpacity>
@@ -358,8 +355,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  languageIcon: {
-    fontSize: 36,
+  languageIconContainer: {
     marginBottom: spacing.sm,
   },
   languageNative: {

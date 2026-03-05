@@ -48,7 +48,7 @@
 - [x] Voice Interface Loading States
 
 ##### Scheme Matchmaker
-- [ ] Scheme Search/Query Input Screen
+- [x] Scheme Search/Query Input Screen
 - [ ] Scheme List View with relevance scores
 - [ ] Scheme Detail Page
 - [ ] Saved/Bookmarked Schemes Screen

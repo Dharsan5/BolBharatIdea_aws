@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Easing,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import BolBharatLogo from '../components/BolBharatLogo';
 
@@ -405,7 +406,7 @@ export default function WelcomeScreen({ navigation }) {
           <View style={styles.buttonGradient}>
             <Text style={styles.getStartedText}>Get Started</Text>
             <View style={styles.buttonArrow}>
-              <Text style={styles.arrowText}>→</Text>
+              <Ionicons name="arrow-forward" size={20} color={colors.white} />
             </View>
           </View>
         </TouchableOpacity>
@@ -650,11 +651,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  arrowText: {
-    fontSize: 16,
-    color: colors.white,
-    fontWeight: 'bold',
   },
   
   // Features
