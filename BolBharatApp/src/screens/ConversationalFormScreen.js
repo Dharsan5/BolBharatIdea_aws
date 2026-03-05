@@ -103,7 +103,7 @@ const FORM_TEMPLATES = {
 };
 
 export default function ConversationalFormScreen({ route, navigation }) {
-  const { formId } = route.params || {};
+  const { formId, editMode, jumpToQuestion } = route.params || {};
   const formTemplate = FORM_TEMPLATES[formId] || FORM_TEMPLATES['1'];
 
   const [messages, setMessages] = useState([]);
@@ -118,6 +118,14 @@ export default function ConversationalFormScreen({ route, navigation }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
+    // If coming from edit mode, skip greeting and jump to specific question
+    if (editMode && jumpToQuestion !== undefined) {
+      setTimeout(() => {
+        askQuestion(jumpToQuestion);
+      }, 500);
+      return;
+    }
+
     // Start the conversation with a greeting
     addAIMessage(
       `Hello! I'll help you fill out the ${formTemplate.name}. I'll ask you a few simple questions. Let's begin!`,
@@ -311,13 +319,14 @@ export default function ConversationalFormScreen({ route, navigation }) {
 
     setTimeout(() => {
       // Navigate to form preview screen
-      // navigation.navigate('FormPreview', { formId, answers });
-      Alert.alert(
-        'Form Complete',
-        'Your form is ready for review!',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
-    }, 2000);
+      navigation.navigate('FormPreview', {
+        formId,
+        formName: formTemplate.name,
+        formNameHindi: formTemplate.nameHindi,
+        questions: formTemplate.questions,
+        answers,
+      });
+    }, 1500);
   };
 
   const handleSaveDraft = () => {
