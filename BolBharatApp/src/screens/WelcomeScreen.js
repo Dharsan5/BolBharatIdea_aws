@@ -255,7 +255,7 @@ export default function WelcomeScreen({ navigation }) {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      navigation.replace('Main');
+      navigation.replace('LanguageSelection');
     });
   };
 

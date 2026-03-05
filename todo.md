@@ -32,9 +32,9 @@
 #### App Screens/Pages Implementation
 ##### Onboarding & Authentication
 - [x] Welcome/Splash Screen
-- [ ] Language Selection Screen
+- [x] Language Selection Screen
 - [ ] Phone Authentication Screen (AWS Cognito)
-- [ ] User Profile Setup Screen
+- [x] User Profile Setup Screen
 
 ##### Home & Navigation
 - [x] Dashboard/Home Screen
