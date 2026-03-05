@@ -6,7 +6,7 @@ import { theme } from '../theme';
 
 import HomeStackNavigator from './HomeStackNavigator';
 import SchemesStackNavigator from './SchemesStackNavigator';
-import DocumentsScreen from '../screens/DocumentsScreen';
+import DocumentsStackNavigator from './DocumentsStackNavigator';
 import FormsScreen from '../screens/FormsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
@@ -43,7 +43,7 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Documents"
-        component={DocumentsScreen}
+        component={DocumentsStackNavigator}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "document-text" : "document-text-outline"} size={size} color={color} />

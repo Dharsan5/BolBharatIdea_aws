@@ -24,7 +24,7 @@
 - [x] Initialize React Native project
 - [x] Set up project structure and navigation
 - [x] Implement voice interface component
-- [ ] Implement camera module for document capture
+- [x] Implement camera module for document capture
 - [ ] Set up Redux Toolkit for state management
 - [ ] Configure AsyncStorage for local persistence
 - [ ] Implement offline manager for caching
@@ -55,8 +55,8 @@
 - [x] Eligibility Checker Interface
 
 ##### Document Simplifier
-- [ ] Camera Interface for Document Capture
-- [ ] Document Preview Screen
+- [x] Camera Interface for Document Capture
+- [x] Document Preview Screen
 - [ ] OCR Processing Screen (loading state)
 - [ ] Simplified Document View
 - [ ] Document History List

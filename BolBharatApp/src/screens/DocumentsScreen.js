@@ -4,7 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
-export default function DocumentsScreen() {
+export default function DocumentsScreen({ navigation }) {
+  const handleOpenCamera = () => {
+    navigation.navigate('DocumentCamera');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -14,7 +18,7 @@ export default function DocumentsScreen() {
 
       <View style={styles.content}>
         {/* Camera Card */}
-        <TouchableOpacity style={styles.cameraCard}>
+        <TouchableOpacity style={styles.cameraCard} onPress={handleOpenCamera}>
           <View style={styles.cameraIcon}>
             <Ionicons name="camera" size={48} color={theme.colors.white} />
           </View>
