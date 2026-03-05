@@ -5,7 +5,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
 import HomeStackNavigator from './HomeStackNavigator';
-import SchemesScreen from '../screens/SchemesScreen';
+import SchemesStackNavigator from './SchemesStackNavigator';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import FormsScreen from '../screens/FormsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -34,7 +34,7 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Schemes"
-        component={SchemesScreen}
+        component={SchemesStackNavigator}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "bulb" : "bulb-outline"} size={size} color={color} />

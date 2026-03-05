@@ -73,7 +73,7 @@ const QUICK_SEARCH_CATEGORIES = [
   { id: 'employment', label: 'Employment', iconFamily: Ionicons, iconName: 'briefcase-outline' },
 ];
 
-export default function SchemesScreen() {
+export default function SchemesScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -150,6 +150,10 @@ export default function SchemesScreen() {
     setSchemes(MOCK_SCHEMES);
   };
 
+  const handleViewDetails = (schemeId) => {
+    navigation.navigate('SchemeDetail', { schemeId });
+  };
+
   const renderSchemeCard = ({ item }) => (
     <TouchableOpacity style={styles.schemeCard} activeOpacity={0.7}>
       <View style={styles.cardHeader}>
@@ -173,7 +177,10 @@ export default function SchemesScreen() {
         <Text style={styles.benefitsText}>{item.benefits}</Text>
       </View>
       
-      <TouchableOpacity style={styles.detailsButton}>
+      <TouchableOpacity 
+        style={styles.detailsButton}
+        onPress={() => handleViewDetails(item.id)}
+      >
         <Text style={styles.detailsButtonText}>View Details</Text>
         <Ionicons name="arrow-forward" size={16} color={colors.white} />
       </TouchableOpacity>
