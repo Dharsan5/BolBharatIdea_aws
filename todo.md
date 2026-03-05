@@ -64,7 +64,7 @@
 ##### Agentic Form Filling
 - [x] Form Selection/List Screen
 - [x] Conversational Question Interface
-- [ ] Form Progress Indicator
+- [x] Form Progress Indicator
 - [ ] Form Preview/Summary Screen
 - [ ] Confirmation Screen
 - [ ] Submission Status Screen

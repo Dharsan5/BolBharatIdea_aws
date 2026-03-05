@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
+import FormProgressModal from '../components/FormProgressModal';
 
 // Mock form structure - In production, this would come from backend
 const FORM_TEMPLATES = {
@@ -111,6 +112,7 @@ export default function ConversationalFormScreen({ route, navigation }) {
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [language, setLanguage] = useState('english');
+  const [isProgressModalVisible, setIsProgressModalVisible] = useState(false);
 
   const flatListRef = useRef(null);
   const inputRef = useRef(null);
@@ -336,6 +338,14 @@ export default function ConversationalFormScreen({ route, navigation }) {
     );
   };
 
+  const handleJumpToQuestion = (questionIndex) => {
+    // Allow jumping back to previous questions to review/edit answers
+    if (questionIndex < currentQuestionIndex) {
+      setCurrentQuestionIndex(questionIndex);
+      askQuestion(questionIndex);
+    }
+  };
+
   const handleExit = () => {
     Alert.alert(
       'Exit Form',
@@ -478,9 +488,14 @@ export default function ConversationalFormScreen({ route, navigation }) {
             Question {Math.min(currentQuestionIndex + 1, formTemplate.questions.length)} of {formTemplate.questions.length}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleSaveDraft} style={styles.headerButton}>
-          <MaterialCommunityIcons name="content-save-outline" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => setIsProgressModalVisible(true)} style={styles.headerButton}>
+            <MaterialCommunityIcons name="progress-check" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSaveDraft} style={styles.headerButton}>
+            <MaterialCommunityIcons name="content-save-outline" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Progress Bar */}
@@ -518,6 +533,19 @@ export default function ConversationalFormScreen({ route, navigation }) {
           {language === 'english' ? 'हिंदी' : 'English'}
         </Text>
       </TouchableOpacity>
+
+      {/* Progress Modal */}
+      <FormProgressModal
+        visible={isProgressModalVisible}
+        onClose={() => setIsProgressModalVisible(false)}
+        formName={formTemplate.name}
+        formNameHindi={formTemplate.nameHindi}
+        questions={formTemplate.questions}
+        answers={answers}
+        currentQuestionIndex={currentQuestionIndex}
+        language={language}
+        onJumpToQuestion={handleJumpToQuestion}
+      />
     </SafeAreaView>
   );
 }
@@ -543,6 +571,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   headerCenter: {
