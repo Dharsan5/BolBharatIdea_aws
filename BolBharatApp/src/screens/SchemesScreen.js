@@ -288,6 +288,25 @@ export default function SchemesScreen({ navigation }) {
         </View>
       )}
 
+      {/* Check Eligibility Banner */}
+      {!searchQuery && (
+        <TouchableOpacity
+          style={styles.eligibilityBanner}
+          onPress={() => navigation.navigate('EligibilityChecker')}
+        >
+          <View style={styles.eligibilityBannerIcon}>
+            <Ionicons name="checkmark-circle" size={28} color={colors.black} />
+          </View>
+          <View style={styles.eligibilityBannerContent}>
+            <Text style={styles.eligibilityBannerTitle}>Check Your Eligibility</Text>
+            <Text style={styles.eligibilityBannerSubtitle}>
+              Answer a few questions to find schemes you qualify for
+            </Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
+      )}
+
       {/* Results Header */}
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsText}>
@@ -475,8 +494,50 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   categoryLabelSelected: {
-    color: colors.black,
+    color: colors.white,
     fontFamily: typography.fontFamily.semiBold,
+  },
+  
+  // Eligibility Banner
+  eligibilityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.black,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  eligibilityBannerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.gray50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  eligibilityBannerContent: {
+    flex: 1,
+  },
+  eligibilityBannerTitle: {
+    fontSize: 16,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs / 2,
+  },
+  eligibilityBannerSubtitle: {
+    fontSize: 13,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
   
   // Results Header

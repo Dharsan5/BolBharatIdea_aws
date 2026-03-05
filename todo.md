@@ -52,7 +52,7 @@
 - [ ] Scheme List View with relevance scores
 - [x] Scheme Detail Page
 - [x] Saved/Bookmarked Schemes Screen
-- [ ] Eligibility Checker Interface
+- [x] Eligibility Checker Interface
 
 ##### Document Simplifier
 - [ ] Camera Interface for Document Capture

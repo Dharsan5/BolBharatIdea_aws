@@ -394,24 +394,29 @@ export default function SchemeDetailScreen({ route, navigation }) {
       {/* Fixed Bottom Action Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity 
-          style={[styles.actionButton, styles.saveButton]}
+          style={[styles.actionButton, styles.iconButton]}
           onPress={handleSave}
         >
           <Ionicons 
             name={isSaved ? "bookmark" : "bookmark-outline"} 
-            size={20} 
+            size={24} 
             color={colors.black} 
           />
-          <Text style={styles.saveButtonText}>
-            {isSaved ? 'Saved' : 'Save'}
-          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.eligibilityButton]}
+          onPress={() => navigation.navigate('EligibilityChecker', { schemeId })}
+        >
+          <Ionicons name="checkmark-circle-outline" size={20} color={colors.black} />
+          <Text style={styles.eligibilityButtonText}>Check Eligibility</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.actionButton, styles.applyButton]}
           onPress={handleApply}
         >
-          <Text style={styles.applyButtonText}>Apply Now</Text>
+          <Text style={styles.applyButtonText}>Apply</Text>
           <Ionicons name="arrow-forward" size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
@@ -696,19 +701,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: spacing.xs,
   },
-  saveButton: {
-    flex: 0.35,
+  iconButton: {
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.black,
+    paddingHorizontal: spacing.md,
+  },
+  eligibilityButton: {
+    flex: 1,
     backgroundColor: colors.white,
     borderWidth: 2,
     borderColor: colors.black,
   },
-  saveButtonText: {
+  eligibilityButtonText: {
     fontSize: 14,
     fontFamily: typography.fontFamily.semiBold,
     color: colors.black,
   },
   applyButton: {
-    flex: 0.65,
+    flex: 1,
     backgroundColor: colors.black,
   },
   applyButtonText: {

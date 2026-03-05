@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SchemesScreen from '../screens/SchemesScreen';
 import SchemeDetailScreen from '../screens/SchemeDetailScreen';
 import SavedSchemesScreen from '../screens/SavedSchemesScreen';
+import EligibilityCheckerScreen from '../screens/EligibilityCheckerScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,13 @@ export default function SchemesStackNavigator() {
       <Stack.Screen 
         name="SavedSchemes" 
         component={SavedSchemesScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen 
+        name="EligibilityChecker" 
+        component={EligibilityCheckerScreen}
         options={{
           animation: 'slide_from_right',
         }}
