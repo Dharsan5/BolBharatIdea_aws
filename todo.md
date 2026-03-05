@@ -58,7 +58,7 @@
 - [x] Camera Interface for Document Capture
 - [x] Document Preview Screen
 - [ ] OCR Processing Screen (loading state)
-- [ ] Simplified Document View
+- [x] Simplified Document View
 - [ ] Document History List
 
 ##### Agentic Form Filling

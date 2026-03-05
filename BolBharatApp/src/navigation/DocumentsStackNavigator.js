@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import DocumentCameraScreen from '../screens/DocumentCameraScreen';
 import DocumentPreviewScreen from '../screens/DocumentPreviewScreen';
+import SimplifiedDocumentScreen from '../screens/SimplifiedDocumentScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,13 @@ export default function DocumentsStackNavigator() {
       <Stack.Screen 
         name="DocumentPreview" 
         component={DocumentPreviewScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen 
+        name="SimplifiedDocument" 
+        component={SimplifiedDocumentScreen}
         options={{
           animation: 'slide_from_right',
         }}
