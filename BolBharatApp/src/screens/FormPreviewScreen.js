@@ -37,14 +37,12 @@ export default function FormPreviewScreen({ route, navigation }) {
           style: 'default',
           onPress: () => {
             // Navigate to confirmation screen
-            // navigation.navigate('FormConfirmation', { formId, answers });
-            Alert.alert(
-              language === 'hindi' ? 'सफलता!' : 'Success!',
-              language === 'hindi'
-                ? 'आपका फॉर्म सफलतापूर्वक जमा कर दिया गया है।'
-                : 'Your form has been submitted successfully.',
-              [{ text: 'OK', onPress: () => navigation.navigate('FormSelection') }]
-            );
+            navigation.navigate('FormConfirmation', {
+              formId,
+              formName,
+              formNameHindi,
+              answers,
+            });
           },
         },
       ]
