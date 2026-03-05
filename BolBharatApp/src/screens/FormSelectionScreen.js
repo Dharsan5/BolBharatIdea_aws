@@ -141,8 +141,7 @@ export default function FormSelectionScreen({ navigation }) {
 
   const handleFormSelect = (form) => {
     // Navigate to conversational form filling screen
-    // navigation.navigate('FormConversation', { formId: form.id });
-    console.log('Selected form:', form.name);
+    navigation.navigate('FormConversation', { formId: form.id });
   };
 
   const filteredForms = AVAILABLE_FORMS.filter((form) => {
