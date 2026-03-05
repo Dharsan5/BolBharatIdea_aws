@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
+import { useSavedSchemes } from '../context/SavedSchemesContext';
 
 const { width } = Dimensions.get('window');
 
@@ -79,6 +80,9 @@ export default function SchemesScreen({ navigation }) {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [schemes, setSchemes] = useState(MOCK_SCHEMES);
+  
+  const { getSavedSchemesCount } = useSavedSchemes();
+  const savedCount = getSavedSchemesCount();
   
   const voiceButtonScale = useRef(new Animated.Value(1)).current;
   const searchBarFade = useRef(new Animated.Value(1)).current;
@@ -154,6 +158,10 @@ export default function SchemesScreen({ navigation }) {
     navigation.navigate('SchemeDetail', { schemeId });
   };
 
+  const handleViewSaved = () => {
+    navigation.navigate('SavedSchemes');
+  };
+
   const renderSchemeCard = ({ item }) => (
     <TouchableOpacity style={styles.schemeCard} activeOpacity={0.7}>
       <View style={styles.cardHeader}>
@@ -191,10 +199,18 @@ export default function SchemesScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.title}>Find Schemes</Text>
           <Text style={styles.subtitle}>योजनाएं खोजें</Text>
         </View>
+        <TouchableOpacity style={styles.savedButton} onPress={handleViewSaved}>
+          <Ionicons name="bookmark-outline" size={24} color={colors.black} />
+          {savedCount > 0 && (
+            <View style={styles.savedBadge}>
+              <Text style={styles.savedBadgeText}>{savedCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar with Voice */}
@@ -309,9 +325,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
+  },
+  headerLeft: {
+    flex: 1,
   },
   title: {
     fontSize: 32,
@@ -323,6 +345,32 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  savedButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.gray50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  savedBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: colors.black,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  savedBadgeText: {
+    fontSize: 11,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.white,
   },
   
   // Search Section

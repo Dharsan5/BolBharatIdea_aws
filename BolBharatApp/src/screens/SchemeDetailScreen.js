@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
+import { useSavedSchemes } from '../context/SavedSchemesContext';
 
 const { width } = Dimensions.get('window');
 
@@ -209,7 +210,8 @@ export default function SchemeDetailScreen({ route, navigation }) {
   const { schemeId } = route.params;
   const scheme = SCHEME_DETAILS[schemeId];
   
-  const [isSaved, setIsSaved] = useState(false);
+  const { isSchemeSaved, toggleSaveScheme } = useSavedSchemes();
+  const isSaved = isSchemeSaved(schemeId);
   const [activeSection, setActiveSection] = useState('overview');
   
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -220,7 +222,7 @@ export default function SchemeDetailScreen({ route, navigation }) {
   });
 
   const handleSave = () => {
-    setIsSaved(!isSaved);
+    toggleSaveScheme(schemeId);
   };
 
   const handleApply = () => {

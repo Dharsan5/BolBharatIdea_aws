@@ -51,7 +51,7 @@
 - [x] Scheme Search/Query Input Screen
 - [ ] Scheme List View with relevance scores
 - [x] Scheme Detail Page
-- [ ] Saved/Bookmarked Schemes Screen
+- [x] Saved/Bookmarked Schemes Screen
 - [ ] Eligibility Checker Interface
 
 ##### Document Simplifier
