@@ -5,6 +5,7 @@ import ConversationalFormScreen from '../screens/ConversationalFormScreen';
 import FormPreviewScreen from '../screens/FormPreviewScreen';
 import FormSubmissionScreen from '../screens/FormSubmissionScreen';
 import FormConfirmationScreen from '../screens/FormConfirmationScreen';
+import ApplicationTrackingScreen from '../screens/ApplicationTrackingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,10 +50,13 @@ export default function FormsStackNavigator() {
           gestureEnabled: false,
         }}
       />
-      {/* Additional screens will be added here:
-          - FormSubmission (submission status)
-          - FormTracking (application tracking)
-      */}
+      <Stack.Screen
+        name="ApplicationTracking"
+        component={ApplicationTrackingScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack.Navigator>
   );
 }

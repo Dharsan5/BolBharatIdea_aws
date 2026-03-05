@@ -68,7 +68,7 @@
 - [x] Form Preview/Summary Screen
 - [x] Confirmation Screen
 - [x] Submission Status Screen
-- [ ] Application Tracking Screen
+- [x] Application Tracking Screen
 
 ##### User Profile & Settings
 - [ ] Profile Information Editor

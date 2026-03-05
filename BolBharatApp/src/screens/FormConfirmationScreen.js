@@ -60,8 +60,7 @@ export default function FormConfirmationScreen({ route, navigation }) {
 
   const handleTrackApplication = () => {
     // Navigate to application tracking screen
-    // navigation.navigate('FormTracking', { referenceNumber });
-    navigation.navigate('FormSelection');
+    navigation.navigate('ApplicationTracking', { referenceNumber });
   };
 
   const handleGoHome = () => {
