@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+// import { Audio } from 'expo-av'; // Commented out - requires native build, will use AWS Polly
 import { colors, spacing, typography } from '../theme';
 import { useDocumentHistory } from '../context/DocumentHistoryContext';
 
@@ -114,20 +114,11 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedDocumentId, setSavedDocumentId] = useState(documentId || null);
-  const [sound, setSound] = useState(null);
   const [language, setLanguage] = useState('english'); // 'english', 'hindi'
 
   const { addDocument, updateDocument, getDocument } = useDocumentHistory();
   const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
 
   useEffect(() => {
     // Check if this document is already saved
@@ -166,32 +157,16 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
     });
   };
 
-  const handlePlayAudio = async () => {
-    if (isPlaying) {
-      // Stop audio
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        setSound(null);
-      }
-      setIsPlaying(false);
-      return;
-    }
-
-    // Mock audio playback - In production, use AWS Polly
-    setIsPlaying(true);
+  const handlePlayAudio = () => {
+    // Audio feature requires AWS Polly integration
+    Alert.alert(
+      'Audio Feature',
+      'Text-to-speech will be enabled when AWS Polly is integrated.',
+      [{ text: 'OK' }]
+    );
     
-    // Simulate audio playback
-    setTimeout(() => {
-      setIsPlaying(false);
-    }, 5000);
-
     // TODO: Implement actual text-to-speech with AWS Polly
-    // const { sound } = await Audio.Sound.createAsync(
-    //   { uri: audioUri },
-    //   { shouldPlay: true }
-    // );
-    // setSound(sound);
+    // This will convert the simplified text to audio in the selected language
   };
 
   const handleSave = async () => {

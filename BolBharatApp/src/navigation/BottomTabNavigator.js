@@ -7,7 +7,7 @@ import { theme } from '../theme';
 import HomeStackNavigator from './HomeStackNavigator';
 import SchemesStackNavigator from './SchemesStackNavigator';
 import DocumentsStackNavigator from './DocumentsStackNavigator';
-import FormsScreen from '../screens/FormsScreen';
+import FormsStackNavigator from './FormsStackNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -52,7 +52,7 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Forms"
-        component={FormsScreen}
+        component={FormsStackNavigator}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <MaterialCommunityIcons name={focused ? "file-document-edit" : "file-document-edit-outline"} size={size} color={color} />

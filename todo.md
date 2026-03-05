@@ -62,7 +62,7 @@
 - [x] Document History List
 
 ##### Agentic Form Filling
-- [ ] Form Selection/List Screen
+- [x] Form Selection/List Screen
 - [ ] Conversational Question Interface
 - [ ] Form Progress Indicator
 - [ ] Form Preview/Summary Screen
