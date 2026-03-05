@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import RootNavigator from './src/navigation';
 import { fonts } from './src/theme';
 import { SavedSchemesProvider } from './src/context/SavedSchemesContext';
+import { DocumentHistoryProvider } from './src/context/DocumentHistoryContext';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -42,8 +43,10 @@ export default function App() {
 
   return (
     <SavedSchemesProvider>
-      <RootNavigator />
-      <StatusBar style="dark" />
+      <DocumentHistoryProvider>
+        <RootNavigator />
+        <StatusBar style="dark" />
+      </DocumentHistoryProvider>
     </SavedSchemesProvider>
   );
 }

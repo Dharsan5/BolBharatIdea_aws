@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { colors, spacing, typography } from '../theme';
+import { useDocumentHistory } from '../context/DocumentHistoryContext';
 
 // Mock data - In production, this would come from AWS Textract + Bedrock
 const MOCK_DOCUMENT_DATA = {
@@ -107,14 +108,16 @@ The ration card helps you buy essential items like rice, wheat, and sugar at low
 };
 
 export default function SimplifiedDocumentScreen({ route, navigation }) {
-  const { imageUri, originalUri } = route.params || {};
+  const { imageUri, originalUri, documentId } = route.params || {};
   
   const [activeTab, setActiveTab] = useState('simplified'); // 'original', 'simplified'
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [savedDocumentId, setSavedDocumentId] = useState(documentId || null);
   const [sound, setSound] = useState(null);
   const [language, setLanguage] = useState('english'); // 'english', 'hindi'
 
+  const { addDocument, updateDocument, getDocument } = useDocumentHistory();
   const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -125,6 +128,17 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
         }
       : undefined;
   }, [sound]);
+
+  useEffect(() => {
+    // Check if this document is already saved
+    if (documentId) {
+      const existingDoc = getDocument(documentId);
+      if (existingDoc) {
+        setIsSaved(true);
+        setSavedDocumentId(documentId);
+      }
+    }
+  }, [documentId]);
 
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
@@ -180,9 +194,47 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
     // setSound(sound);
   };
 
-  const handleSave = () => {
-    setIsSaved(!isSaved);
-    // TODO: Save to AsyncStorage or backend
+  const handleSave = async () => {
+    if (isSaved && savedDocumentId) {
+      // Already saved, show confirmation to unsave
+      Alert.alert(
+        'Remove Document',
+        'Are you sure you want to remove this document from history?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: () => {
+              setIsSaved(false);
+              setSavedDocumentId(null);
+              // Note: We don't delete here, just mark as unsaved in UI
+            },
+          },
+        ]
+      );
+    } else {
+      // Save new document
+      try {
+        const docId = await addDocument({
+          imageUri,
+          originalUri,
+          title: MOCK_DOCUMENT_DATA.title,
+          titleHindi: MOCK_DOCUMENT_DATA.titleHindi,
+          documentType: MOCK_DOCUMENT_DATA.documentType,
+          extractedText: MOCK_DOCUMENT_DATA.extractedText,
+          simplifiedText: MOCK_DOCUMENT_DATA.simplifiedText,
+          simplifiedTextHindi: MOCK_DOCUMENT_DATA.simplifiedTextHindi,
+          keyPoints: MOCK_DOCUMENT_DATA.keyPoints,
+        });
+        setIsSaved(true);
+        setSavedDocumentId(docId);
+        Alert.alert('Success', 'Document saved to history!');
+      } catch (error) {
+        console.error('Error saving document:', error);
+        Alert.alert('Error', 'Failed to save document. Please try again.');
+      }
+    }
   };
 
   const handleShare = () => {

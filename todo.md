@@ -59,7 +59,7 @@
 - [x] Document Preview Screen
 - [ ] OCR Processing Screen (loading state)
 - [x] Simplified Document View
-- [ ] Document History List
+- [x] Document History List
 
 ##### Agentic Form Filling
 - [ ] Form Selection/List Screen
