@@ -31,7 +31,7 @@
 
 #### App Screens/Pages Implementation
 ##### Onboarding & Authentication
-- [ ] Welcome/Splash Screen
+- [x] Welcome/Splash Screen
 - [ ] Language Selection Screen
 - [ ] Phone Authentication Screen (AWS Cognito)
 - [ ] User Profile Setup Screen
