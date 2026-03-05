@@ -71,7 +71,7 @@
 - [x] Application Tracking Screen
 
 ##### User Profile & Settings
-- [ ] Profile Information Editor
+- [x] Profile Information Editor
 - [ ] Language Preferences Screen
 - [ ] Location Settings Screen
 - [ ] Demographics Update Screen

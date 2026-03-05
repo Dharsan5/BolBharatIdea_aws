@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const [offlineMode, setOfflineMode] = React.useState(false);
 
   return (
@@ -71,7 +71,10 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('ProfileEdit')}
+          >
             <View style={styles.settingIconContainer}>
               <Ionicons name="person-outline" size={24} color={theme.colors.black} />
             </View>

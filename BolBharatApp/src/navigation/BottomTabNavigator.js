@@ -8,7 +8,7 @@ import HomeStackNavigator from './HomeStackNavigator';
 import SchemesStackNavigator from './SchemesStackNavigator';
 import DocumentsStackNavigator from './DocumentsStackNavigator';
 import FormsStackNavigator from './FormsStackNavigator';
-import ProfileScreen from '../screens/ProfileScreen';
+import ProfileStackNavigator from './ProfileStackNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -61,7 +61,7 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileStackNavigator}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
