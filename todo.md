@@ -67,7 +67,7 @@
 - [x] Form Progress Indicator
 - [x] Form Preview/Summary Screen
 - [x] Confirmation Screen
-- [ ] Submission Status Screen
+- [x] Submission Status Screen
 - [ ] Application Tracking Screen
 
 ##### User Profile & Settings

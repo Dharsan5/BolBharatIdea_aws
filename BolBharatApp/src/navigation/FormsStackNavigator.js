@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import FormSelectionScreen from '../screens/FormSelectionScreen';
 import ConversationalFormScreen from '../screens/ConversationalFormScreen';
 import FormPreviewScreen from '../screens/FormPreviewScreen';
+import FormSubmissionScreen from '../screens/FormSubmissionScreen';
 import FormConfirmationScreen from '../screens/FormConfirmationScreen';
 
 const Stack = createNativeStackNavigator();
@@ -30,6 +31,14 @@ export default function FormsStackNavigator() {
         component={FormPreviewScreen}
         options={{
           animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="FormSubmission"
+        component={FormSubmissionScreen}
+        options={{
+          animation: 'fade',
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen

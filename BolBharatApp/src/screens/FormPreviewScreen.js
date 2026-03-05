@@ -36,8 +36,8 @@ export default function FormPreviewScreen({ route, navigation }) {
           text: language === 'hindi' ? 'जमा करें' : 'Submit',
           style: 'default',
           onPress: () => {
-            // Navigate to confirmation screen
-            navigation.navigate('FormConfirmation', {
+            // Navigate to submission screen
+            navigation.navigate('FormSubmission', {
               formId,
               formName,
               formNameHindi,
