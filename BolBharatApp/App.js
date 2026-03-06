@@ -8,6 +8,7 @@ import { fonts } from './src/theme';
 import { SavedSchemesProvider } from './src/context/SavedSchemesContext';
 import { DocumentHistoryProvider } from './src/context/DocumentHistoryContext';
 import { ToastProvider } from './src/context/ToastContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -37,12 +38,14 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <SavedSchemesProvider>
-        <DocumentHistoryProvider>
-          <RootNavigator />
-          <StatusBar style="dark" />
-        </DocumentHistoryProvider>
-      </SavedSchemesProvider>
+      <LanguageProvider>
+        <SavedSchemesProvider>
+          <DocumentHistoryProvider>
+            <RootNavigator />
+            <StatusBar style="dark" />
+          </DocumentHistoryProvider>
+        </SavedSchemesProvider>
+      </LanguageProvider>
     </ToastProvider>
   );
 }

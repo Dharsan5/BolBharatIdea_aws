@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import theme from '../theme';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ProfileScreen({ navigation }) {
-  const [offlineMode, setOfflineMode] = React.useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
+  const { currentLanguage } = useLanguage();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -30,14 +34,14 @@ export default function ProfileScreen({ navigation }) {
 
           <TouchableOpacity 
             style={styles.settingItem}
-            onPress={() => navigation.navigate('LanguagePreferences')}
+            onPress={() => setShowLanguageSwitcher(true)}
           >
             <View style={styles.settingIconContainer}>
               <Ionicons name="globe-outline" size={24} color={theme.colors.black} />
             </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Language</Text>
-              <Text style={styles.settingValue}>Hindi / हिंदी</Text>
+              <Text style={styles.settingValue}>{currentLanguage.nativeName}</Text>
             </View>
             <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
@@ -183,6 +187,12 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.version}>Version 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Language Switcher Modal */}
+      <LanguageSwitcher
+        visible={showLanguageSwitcher}
+        onClose={() => setShowLanguageSwitcher(false)}
+      />
     </SafeAreaView>
   );
 }

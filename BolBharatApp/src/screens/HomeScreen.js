@@ -5,12 +5,16 @@ import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import theme from '../theme';
 import AnimatedBlob from '../components/AnimatedBlob';
 import OfflineBanner from '../components/OfflineBanner';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function HomeScreen({ navigation }) {
   const [isListening, setIsListening] = useState(false);
   const [amplitude, setAmplitude] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [pendingSync, setPendingSync] = useState(0); // For demo: number of items pending sync
+  const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
+  const { currentLanguage } = useLanguage();
   
   const amplitudeInterval = useRef(null);
   const micButtonScale = useRef(new Animated.Value(1)).current;
@@ -109,6 +113,12 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={styles.headerIcon}
+            onPress={() => setShowLanguageSwitcher(true)}
+          >
+            <Ionicons name="globe-outline" size={20} color={theme.colors.black} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
             <Ionicons name="mic-outline" size={20} color={theme.colors.black} />
           </TouchableOpacity>
@@ -203,6 +213,12 @@ export default function HomeScreen({ navigation }) {
 
       {/* Home Indicator */}
       <View style={styles.homeIndicator} />
+
+      {/* Language Switcher Modal */}
+      <LanguageSwitcher
+        visible={showLanguageSwitcher}
+        onClose={() => setShowLanguageSwitcher(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -39,7 +39,7 @@
 ##### Home & Navigation
 - [x] Dashboard/Home Screen
 - [x] Bottom Tab Navigation Component
-- [ ] Language Switcher Component
+- [x] Language Switcher Component
 
 ##### Voice Interface
 - [x] Voice Recording Screen with visual feedback
