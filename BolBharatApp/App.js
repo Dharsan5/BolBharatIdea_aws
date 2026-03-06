@@ -4,7 +4,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { Provider } from 'react-redux';
-import { store } from './src/store';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './src/store';
 import RootNavigator from './src/navigation';
 import { fonts } from './src/theme';
 import { SavedSchemesProvider } from './src/context/SavedSchemesContext';
@@ -40,16 +41,18 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <ToastProvider>
-        <LanguageProvider>
-          <SavedSchemesProvider>
-            <DocumentHistoryProvider>
-              <RootNavigator />
-              <StatusBar style="dark" />
-            </DocumentHistoryProvider>
-          </SavedSchemesProvider>
-        </LanguageProvider>
-      </ToastProvider>
+      <PersistGate loading={null} persistor={persistor}>
+        <ToastProvider>
+          <LanguageProvider>
+            <SavedSchemesProvider>
+              <DocumentHistoryProvider>
+                <RootNavigator />
+                <StatusBar style="dark" />
+              </DocumentHistoryProvider>
+            </SavedSchemesProvider>
+          </LanguageProvider>
+        </ToastProvider>
+      </PersistGate>
     </Provider>
   );
 }
