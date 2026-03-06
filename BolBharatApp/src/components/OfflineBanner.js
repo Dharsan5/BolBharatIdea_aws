@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,53 +8,25 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import NetInfo from '@react-native-community/netinfo';
+import { useNetworkStatus, useOfflineQueue } from '../hooks/useOffline';
 import theme from '../theme';
 
 /**
  * OfflineBanner Component
  * 
- * Displays a banner at the top of the screen when the device is offline or in offline mode.
- * Shows connectivity status, pending sync items, and provides quick actions.
- * 
- * Props:
- * - visible: boolean (optional) - Force show/hide banner regardless of network status
- * - onSync: function (optional) - Callback when sync button is pressed
- * - pendingItems: number (optional) - Number of items pending sync
- * - offlineMode: boolean (optional) - Whether app is in offline mode (even with connection)
+ * Displays a banner at the top of the screen when the device is offline.
+ * Shows connectivity status, pending sync items, and provides quick sync action.
+ * Now uses the offline manager for queue tracking and sync.
  */
-export default function OfflineBanner({
-  visible = null,
-  onSync = null,
-  pendingItems = 0,
-  offlineMode = false,
-}) {
-  const [isConnected, setIsConnected] = useState(true);
-  const [connectionType, setConnectionType] = useState('unknown');
+export default function OfflineBanner({ offlineMode = false }) {
+  const { isOnline } = useNetworkStatus();
+  const { queueStatus, syncQueue, syncInProgress } = useOfflineQueue();
   const [slideAnim] = useState(new Animated.Value(-100));
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Subscribe to network state updates
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected);
-      setConnectionType(state.type);
-    });
-
-    // Fetch initial network state
-    NetInfo.fetch().then(state => {
-      setIsConnected(state.isConnected);
-      setConnectionType(state.type);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
     // Determine if banner should be shown
-    const shouldShow = visible !== null ? visible : (!isConnected || offlineMode);
+    const shouldShow = !isOnline || offlineMode;
     
     if (shouldShow !== showBanner) {
       setShowBanner(shouldShow);
@@ -67,38 +39,30 @@ export default function OfflineBanner({
         friction: 7,
       }).start();
     }
-  }, [isConnected, offlineMode, visible, showBanner, slideAnim]);
+  }, [isOnline, offlineMode, showBanner, slideAnim]);
 
   const handleSync = () => {
-    if (onSync) {
-      onSync();
+    if (isOnline && queueStatus.count > 0) {
+      syncQueue();
     }
   };
 
   // Don't render if banner shouldn't be shown
-  if (!showBanner && visible === null) {
+  if (!showBanner) {
     return null;
   }
 
   // Determine banner style based on mode
-  const isOfflineByChoice = offlineMode && isConnected;
-  const isActuallyOffline = !isConnected;
+  const isOfflineByChoice = offlineMode && isOnline;
   
   let bannerStyle = styles.bannerOffline;
   let iconName = 'cloud-offline-outline';
   let message = 'No Internet Connection';
-  let messageHindi = 'कोई इंटरनेट कनेक्शन नहीं';
   
   if (isOfflineByChoice) {
     bannerStyle = styles.bannerOfflineMode;
     iconName = 'airplane-outline';
     message = 'Offline Mode Enabled';
-    messageHindi = 'ऑफ़लाइन मोड सक्षम';
-  } else if (connectionType === 'cellular') {
-    bannerStyle = styles.bannerLimited;
-    iconName = 'cellular-outline';
-    message = 'Limited Connection';
-    messageHindi = 'सीमित कनेक्शन';
   }
 
   return (
@@ -118,41 +82,33 @@ export default function OfflineBanner({
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.messageText}>{message}</Text>
-            <Text style={styles.messageTextHindi}>{messageHindi}</Text>
-            {pendingItems > 0 && (
+            {queueStatus.count > 0 && (
               <Text style={styles.pendingText}>
-                {pendingItems} item{pendingItems > 1 ? 's' : ''} pending sync
+                {queueStatus.count} item{queueStatus.count > 1 ? 's' : ''} pending sync
               </Text>
             )}
           </View>
         </View>
 
-        {/* Sync Button - only show if connected and there are pending items */}
-        {isConnected && pendingItems > 0 && onSync && (
+        {/* Sync Button - only show if online and there are pending items */}
+        {isOnline && queueStatus.count > 0 && (
           <TouchableOpacity
             style={styles.syncButton}
             onPress={handleSync}
             activeOpacity={0.7}
+            disabled={syncInProgress}
           >
-            <Ionicons name="sync-outline" size={18} color={theme.colors.white} />
-            <Text style={styles.syncButtonText}>Sync</Text>
+            <Ionicons 
+              name={syncInProgress ? "hourglass-outline" : "sync-outline"} 
+              size={18} 
+              color={theme.colors.white} 
+            />
+            <Text style={styles.syncButtonText}>
+              {syncInProgress ? 'Syncing...' : 'Sync'}
+            </Text>
           </TouchableOpacity>
         )}
-
-        {/* Connection Type Indicator */}
-        {isConnected && !offlineMode && connectionType === 'cellular' && (
-          <View style={styles.connectionBadge}>
-            <Text style={styles.connectionBadgeText}>2G/3G</Text>
-          </View>
-        )}
       </View>
-
-      {/* Info Text */}
-      {isActuallyOffline && (
-        <Text style={styles.infoText}>
-          You can continue using saved content. Changes will sync when online.
-        </Text>
-      )}
     </Animated.View>
   );
 }
@@ -205,13 +161,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.white,
   },
-  messageTextHindi: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.white,
-    opacity: 0.9,
-    marginTop: 2,
-  },
   pendingText: {
     fontSize: 11,
     color: theme.colors.white,
@@ -232,25 +181,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: theme.colors.white,
-  },
-  connectionBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: theme.spacing.sm,
-  },
-  connectionBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: theme.colors.white,
-  },
-  infoText: {
-    fontSize: 11,
-    color: theme.colors.white,
-    opacity: 0.9,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
-    textAlign: 'center',
   },
 });

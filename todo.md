@@ -27,7 +27,7 @@
 - [x] Implement camera module for document capture
 - [x] Set up Redux Toolkit for state management
 - [x] Configure AsyncStorage for local persistence
-- [ ] Implement offline manager for caching
+- [x] Implement offline manager for caching
 
 #### App Screens/Pages Implementation
 ##### Onboarding & Authentication
