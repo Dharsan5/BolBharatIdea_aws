@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import DocumentCameraScreen from '../screens/DocumentCameraScreen';
 import DocumentPreviewScreen from '../screens/DocumentPreviewScreen';
+import OCRProcessingScreen from '../screens/OCRProcessingScreen';
 import SimplifiedDocumentScreen from '../screens/SimplifiedDocumentScreen';
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +28,14 @@ export default function DocumentsStackNavigator() {
         component={DocumentPreviewScreen}
         options={{
           animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen 
+        name="OCRProcessing" 
+        component={OCRProcessingScreen}
+        options={{
+          animation: 'fade',
+          gestureEnabled: false,
         }}
       />
       <Stack.Screen 

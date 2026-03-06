@@ -57,7 +57,7 @@
 ##### Document Simplifier
 - [x] Camera Interface for Document Capture
 - [x] Document Preview Screen
-- [ ] OCR Processing Screen (loading state)
+- [x] OCR Processing Screen (loading state)
 - [x] Simplified Document View
 - [x] Document History List
 

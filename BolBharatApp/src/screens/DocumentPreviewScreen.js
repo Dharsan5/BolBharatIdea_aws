@@ -34,16 +34,13 @@ export default function DocumentPreviewScreen({ route, navigation }) {
   }
 
   const handleProcess = () => {
-    setIsProcessing(true);
-    // TODO: Implement OCR processing with AWS Textract
-    // For now, navigate to simplified view after delay
-    setTimeout(() => {
-      setIsProcessing(false);
-      navigation.navigate('SimplifiedDocument', {
-        imageUri,
-        originalUri,
-      });
-    }, 2000);
+    // Navigate to OCR Processing screen with the captured image
+    // The OCR Processing screen will handle the simulated processing
+    // and automatically navigate to SimplifiedDocument when complete
+    navigation.navigate('OCRProcessing', {
+      imageUri,
+      documentType: 'Government Form', // In production, this could be auto-detected
+    });
   };
 
   return (
