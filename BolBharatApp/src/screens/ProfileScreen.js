@@ -90,6 +90,20 @@ export default function ProfileScreen({ navigation }) {
             <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('DemographicsUpdate')}
+          >
+            <View style={styles.settingIconContainer}>
+              <MaterialIcons name="family-restroom" size={24} color={theme.colors.black} />
+            </View>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Demographics</Text>
+              <Text style={styles.settingValueSecondary}>Age, category, occupation</Text>
+            </View>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingIconContainer}>
               <Ionicons name="list-outline" size={24} color={theme.colors.black} />

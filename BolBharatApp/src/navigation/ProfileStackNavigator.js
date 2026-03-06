@@ -4,6 +4,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
 import LanguagePreferencesScreen from '../screens/LanguagePreferencesScreen';
 import LocationSettingsScreen from '../screens/LocationSettingsScreen';
+import DemographicsUpdateScreen from '../screens/DemographicsUpdateScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,13 @@ export default function ProfileStackNavigator() {
       <Stack.Screen
         name="LocationSettings"
         component={LocationSettingsScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="DemographicsUpdate"
+        component={DemographicsUpdateScreen}
         options={{
           animation: 'slide_from_right',
         }}

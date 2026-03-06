@@ -74,7 +74,7 @@
 - [x] Profile Information Editor
 - [x] Language Preferences Screen
 - [x] Location Settings Screen
-- [ ] Demographics Update Screen
+- [x] Demographics Update Screen
 - [ ] Privacy Settings Screen
 - [ ] Offline Mode Toggle
 - [ ] App Tutorial/Help Screen
