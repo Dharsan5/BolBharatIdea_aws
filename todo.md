@@ -90,7 +90,7 @@
 - [x] Loading Indicators
 - [x] Toast Notifications
 - [x] Help & Support Screen
-- [ ] FAQs Screen
+- [x] FAQs Screen
 
 ### Core Features Implementation
 
