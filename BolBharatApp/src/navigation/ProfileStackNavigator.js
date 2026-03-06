@@ -7,6 +7,7 @@ import LocationSettingsScreen from '../screens/LocationSettingsScreen';
 import DemographicsUpdateScreen from '../screens/DemographicsUpdateScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import OfflineModeScreen from '../screens/OfflineModeScreen';
+import AppTutorialScreen from '../screens/AppTutorialScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,6 +60,13 @@ export default function ProfileStackNavigator() {
       <Stack.Screen
         name="OfflineMode"
         component={OfflineModeScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="AppTutorial"
+        component={AppTutorialScreen}
         options={{
           animation: 'slide_from_right',
         }}

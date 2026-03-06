@@ -77,7 +77,7 @@
 - [x] Demographics Update Screen
 - [x] Privacy Settings Screen
 - [x] Offline Mode Toggle
-- [ ] App Tutorial/Help Screen
+- [x] App Tutorial/Help Screen
 
 ##### Application Management
 - [ ] Application History List

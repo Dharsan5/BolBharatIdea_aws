@@ -132,6 +132,19 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Help & Support</Text>
 
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('AppTutorial')}
+          >
+            <View style={styles.settingIconContainer}>
+              <Ionicons name="book-outline" size={24} color={theme.colors.black} />
+            </View>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>App Tutorial</Text>
+            </View>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingIconContainer}>
               <Ionicons name="help-circle-outline" size={24} color={theme.colors.black} />
