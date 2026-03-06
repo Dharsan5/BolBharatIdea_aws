@@ -80,7 +80,7 @@
 - [x] App Tutorial/Help Screen
 
 ##### Application Management
-- [ ] Application History List
+- [x] Application History List
 - [ ] Application Status Tracking
 - [ ] Application Details Screen
 

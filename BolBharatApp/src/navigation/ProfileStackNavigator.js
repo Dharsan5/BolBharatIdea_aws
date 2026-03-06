@@ -8,6 +8,7 @@ import DemographicsUpdateScreen from '../screens/DemographicsUpdateScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import OfflineModeScreen from '../screens/OfflineModeScreen';
 import AppTutorialScreen from '../screens/AppTutorialScreen';
+import ApplicationHistoryScreen from '../screens/ApplicationHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -67,6 +68,13 @@ export default function ProfileStackNavigator() {
       <Stack.Screen
         name="AppTutorial"
         component={AppTutorialScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="ApplicationHistory"
+        component={ApplicationHistoryScreen}
         options={{
           animation: 'slide_from_right',
         }}
