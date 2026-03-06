@@ -72,7 +72,7 @@
 
 ##### User Profile & Settings
 - [x] Profile Information Editor
-- [ ] Language Preferences Screen
+- [x] Language Preferences Screen
 - [ ] Location Settings Screen
 - [ ] Demographics Update Screen
 - [ ] Privacy Settings Screen

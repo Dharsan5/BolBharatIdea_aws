@@ -28,7 +28,10 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('LanguagePreferences')}
+          >
             <View style={styles.settingIconContainer}>
               <Ionicons name="globe-outline" size={24} color={theme.colors.black} />
             </View>
