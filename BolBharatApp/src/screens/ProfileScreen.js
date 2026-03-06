@@ -42,7 +42,10 @@ export default function ProfileScreen({ navigation }) {
             <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('LocationSettings')}
+          >
             <View style={styles.settingIconContainer}>
               <Ionicons name="location-outline" size={24} color={theme.colors.black} />
             </View>

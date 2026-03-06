@@ -73,7 +73,7 @@
 ##### User Profile & Settings
 - [x] Profile Information Editor
 - [x] Language Preferences Screen
-- [ ] Location Settings Screen
+- [x] Location Settings Screen
 - [ ] Demographics Update Screen
 - [ ] Privacy Settings Screen
 - [ ] Offline Mode Toggle
