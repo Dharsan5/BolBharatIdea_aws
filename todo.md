@@ -87,7 +87,7 @@
 ##### Common Components
 - [x] Offline Mode Indicator Banner
 - [x] Error Screens
-- [ ] Loading Indicators
+- [x] Loading Indicators
 - [ ] Toast Notifications
 - [ ] Help & Support Screen
 - [ ] FAQs Screen
