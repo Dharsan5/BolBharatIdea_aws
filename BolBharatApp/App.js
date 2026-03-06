@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { Provider } from 'react-redux';
+import { store } from './src/store';
 import RootNavigator from './src/navigation';
 import { fonts } from './src/theme';
 import { SavedSchemesProvider } from './src/context/SavedSchemesContext';
@@ -37,15 +39,17 @@ export default function App() {
   }
 
   return (
-    <ToastProvider>
-      <LanguageProvider>
-        <SavedSchemesProvider>
-          <DocumentHistoryProvider>
-            <RootNavigator />
-            <StatusBar style="dark" />
-          </DocumentHistoryProvider>
-        </SavedSchemesProvider>
-      </LanguageProvider>
-    </ToastProvider>
+    <Provider store={store}>
+      <ToastProvider>
+        <LanguageProvider>
+          <SavedSchemesProvider>
+            <DocumentHistoryProvider>
+              <RootNavigator />
+              <StatusBar style="dark" />
+            </DocumentHistoryProvider>
+          </SavedSchemesProvider>
+        </LanguageProvider>
+      </ToastProvider>
+    </Provider>
   );
 }
