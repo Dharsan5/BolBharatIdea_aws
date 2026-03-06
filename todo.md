@@ -85,7 +85,7 @@
 - [x] Application Details Screen
 
 ##### Common Components
-- [ ] Offline Mode Indicator Banner
+- [x] Offline Mode Indicator Banner
 - [ ] Error Screens
 - [ ] Loading Indicators
 - [ ] Toast Notifications

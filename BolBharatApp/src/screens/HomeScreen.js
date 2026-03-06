@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import AnimatedBlob from '../components/AnimatedBlob';
+import OfflineBanner from '../components/OfflineBanner';
 
 export default function HomeScreen({ navigation }) {
   const [isListening, setIsListening] = useState(false);
   const [amplitude, setAmplitude] = useState(0);
   const [transcript, setTranscript] = useState('');
+  const [pendingSync, setPendingSync] = useState(0); // For demo: number of items pending sync
   
   const amplitudeInterval = useRef(null);
   const micButtonScale = useRef(new Animated.Value(1)).current;
@@ -73,8 +75,24 @@ export default function HomeScreen({ navigation }) {
     stopListening();
   };
 
+  const handleSync = () => {
+    // TODO: Implement actual sync logic
+    Alert.alert(
+      'Syncing',
+      'Syncing pending items with server...',
+      [{ text: 'OK', onPress: () => setPendingSync(0) }]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Offline Banner - shows when no connection or in offline mode */}
+      <OfflineBanner 
+        onSync={handleSync}
+        pendingItems={pendingSync}
+        offlineMode={false} // Set to true to test offline mode when connected
+      />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton}>
