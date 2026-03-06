@@ -82,7 +82,7 @@
 ##### Application Management
 - [x] Application History List
 - [x] Application Status Tracking
-- [ ] Application Details Screen
+- [x] Application Details Screen
 
 ##### Common Components
 - [ ] Offline Mode Indicator Banner
