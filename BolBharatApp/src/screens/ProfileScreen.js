@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
-import { theme } from '../theme';
+import theme from '../theme';
 
 export default function ProfileScreen({ navigation }) {
   const [offlineMode, setOfflineMode] = React.useState(false);

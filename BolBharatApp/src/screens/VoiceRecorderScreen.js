@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // import { Audio } from 'expo-av'; // Commented out - requires native build
-import { theme } from '../theme';
+import theme from '../theme';
 import AnimatedBlob from '../components/AnimatedBlob';
 
 export default function VoiceRecorderScreen({ navigation }) {
