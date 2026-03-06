@@ -56,21 +56,21 @@ export default function ProfileScreen({ navigation }) {
             <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
 
-          <View style={styles.settingItem}>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => navigation.navigate('OfflineMode')}
+          >
             <View style={styles.settingIconContainer}>
-              <Ionicons name="wifi-outline" size={24} color={theme.colors.black} />
+              <Ionicons name="cloud-offline-outline" size={24} color={theme.colors.black} />
             </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Offline Mode</Text>
-              <Text style={styles.settingValueSecondary}>Save data</Text>
+              <Text style={styles.settingValueSecondary}>
+                {offlineMode ? 'Enabled' : 'Disabled'}
+              </Text>
             </View>
-            <Switch
-              value={offlineMode}
-              onValueChange={setOfflineMode}
-              trackColor={{ false: theme.colors.gray300, true: theme.colors.gray700 }}
-              thumbColor={offlineMode ? theme.colors.black : theme.colors.gray400}
-            />
-          </View>
+            <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* Account Section */}

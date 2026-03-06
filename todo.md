@@ -76,7 +76,7 @@
 - [x] Location Settings Screen
 - [x] Demographics Update Screen
 - [x] Privacy Settings Screen
-- [ ] Offline Mode Toggle
+- [x] Offline Mode Toggle
 - [ ] App Tutorial/Help Screen
 
 ##### Application Management
