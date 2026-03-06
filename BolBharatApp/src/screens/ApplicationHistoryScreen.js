@@ -226,8 +226,8 @@ export default function ApplicationHistoryScreen({ navigation }) {
         key={application.id}
         style={styles.applicationCard}
         onPress={() => {
-          // TODO: Navigate to application details
-          navigation.navigate('ApplicationDetails', { applicationId: application.id });
+          // Navigate to application status tracking screen
+          navigation.navigate('ApplicationStatusTracking', { applicationId: application.id });
         }}
       >
         <View style={styles.cardHeader}>

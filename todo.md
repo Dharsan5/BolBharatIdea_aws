@@ -81,7 +81,7 @@
 
 ##### Application Management
 - [x] Application History List
-- [ ] Application Status Tracking
+- [x] Application Status Tracking
 - [ ] Application Details Screen
 
 ##### Common Components
