@@ -88,7 +88,7 @@
 - [x] Offline Mode Indicator Banner
 - [x] Error Screens
 - [x] Loading Indicators
-- [ ] Toast Notifications
+- [x] Toast Notifications
 - [ ] Help & Support Screen
 - [ ] FAQs Screen
 
