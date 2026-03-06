@@ -96,8 +96,8 @@ export default function LanguageSelectionScreen({ navigation }) {
     // Animate and navigate after a short delay
     setTimeout(() => {
       // TODO: Store selected language in AsyncStorage or state management
-      // Navigate to profile setup
-      navigation.replace('UserProfileSetup');
+      // Navigate to phone authentication
+      navigation.replace('PhoneAuth');
     }, 300);
   };
 

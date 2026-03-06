@@ -33,7 +33,7 @@
 ##### Onboarding & Authentication
 - [x] Welcome/Splash Screen
 - [x] Language Selection Screen
-- [ ] Phone Authentication Screen (AWS Cognito)
+- [x] Phone Authentication Screen (AWS Cognito)
 - [x] User Profile Setup Screen
 
 ##### Home & Navigation
