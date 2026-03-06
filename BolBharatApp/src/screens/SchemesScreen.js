@@ -112,17 +112,12 @@ export default function SchemesScreen({ navigation }) {
   const handleSearch = (query) => {
     setSearchQuery(query);
     
-    if (query.trim().length > 0) {
-      // Filter schemes based on query
-      const filtered = MOCK_SCHEMES.filter(scheme =>
-        scheme.name.toLowerCase().includes(query.toLowerCase()) ||
-        scheme.nameHindi.includes(query) ||
-        scheme.category.toLowerCase().includes(query.toLowerCase()) ||
-        scheme.description.toLowerCase().includes(query.toLowerCase())
-      );
-      setSchemes(filtered);
-    } else {
-      setSchemes(MOCK_SCHEMES);
+    if (query.trim().length > 2) {
+      // Navigate to scheme list with search results
+      navigation.navigate('SchemeList', {
+        query: query,
+        category: 'all',
+      });
     }
   };
 
@@ -144,8 +139,11 @@ export default function SchemesScreen({ navigation }) {
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category.id);
-    setSearchQuery(category.label);
-    handleSearch(category.label);
+    // Navigate to scheme list filtered by category
+    navigation.navigate('SchemeList', {
+      query: category.label,
+      category: category.label,
+    });
   };
 
   const handleClearSearch = () => {

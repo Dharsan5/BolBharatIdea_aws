@@ -49,7 +49,7 @@
 
 ##### Scheme Matchmaker
 - [x] Scheme Search/Query Input Screen
-- [ ] Scheme List View with relevance scores
+- [x] Scheme List View with relevance scores
 - [x] Scheme Detail Page
 - [x] Saved/Bookmarked Schemes Screen
 - [x] Eligibility Checker Interface
