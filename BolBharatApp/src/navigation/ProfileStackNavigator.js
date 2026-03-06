@@ -5,6 +5,7 @@ import ProfileEditScreen from '../screens/ProfileEditScreen';
 import LanguagePreferencesScreen from '../screens/LanguagePreferencesScreen';
 import LocationSettingsScreen from '../screens/LocationSettingsScreen';
 import DemographicsUpdateScreen from '../screens/DemographicsUpdateScreen';
+import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +44,13 @@ export default function ProfileStackNavigator() {
       <Stack.Screen
         name="DemographicsUpdate"
         component={DemographicsUpdateScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="PrivacySettings"
+        component={PrivacySettingsScreen}
         options={{
           animation: 'slide_from_right',
         }}

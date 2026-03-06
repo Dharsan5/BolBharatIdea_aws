@@ -75,7 +75,7 @@
 - [x] Language Preferences Screen
 - [x] Location Settings Screen
 - [x] Demographics Update Screen
-- [ ] Privacy Settings Screen
+- [x] Privacy Settings Screen
 - [ ] Offline Mode Toggle
 - [ ] App Tutorial/Help Screen
 
