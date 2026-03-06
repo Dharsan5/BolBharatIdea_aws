@@ -89,7 +89,7 @@
 - [x] Error Screens
 - [x] Loading Indicators
 - [x] Toast Notifications
-- [ ] Help & Support Screen
+- [x] Help & Support Screen
 - [ ] FAQs Screen
 
 ### Core Features Implementation
