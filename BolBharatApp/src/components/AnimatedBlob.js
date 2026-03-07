@@ -16,7 +16,9 @@ const AnimatedBlob = ({ isListening, amplitude = 0 }) => {
         useNativeDriver: true,
       })
     ).start();
+  }, []);
 
+  useEffect(() => {
     // Pulse animation when listening
     if (isListening) {
       Animated.loop(
@@ -34,7 +36,11 @@ const AnimatedBlob = ({ isListening, amplitude = 0 }) => {
         ])
       ).start();
     } else {
-      pulseAnim.setValue(1);
+      pulseAnim.stopAnimation();
+      Animated.spring(pulseAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
     }
   }, [isListening]);
 
@@ -49,7 +55,10 @@ const AnimatedBlob = ({ isListening, amplitude = 0 }) => {
         useNativeDriver: true,
       }).start();
     } else {
-      scaleAnim.setValue(1);
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
     }
   }, [amplitude, isListening]);
 

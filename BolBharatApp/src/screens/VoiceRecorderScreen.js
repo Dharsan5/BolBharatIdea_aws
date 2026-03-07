@@ -1,70 +1,176 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// import { Audio } from 'expo-av'; // Commented out - requires native build
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
+import * as Speech from 'expo-speech';
 import { theme } from '../theme';
+import { useLanguage } from '../i18n/LanguageContext';
 import AnimatedBlob from '../components/AnimatedBlob';
+import { saveConversation } from '../api/database';
+
+// 👇 Paste your Lambda Function URL here
+const LAMBDA_URL = 'https://ci45mlntxomy3rta7a2rb6qidu0wusvg.lambda-url.eu-north-1.on.aws/';
+
+// Map app language codes to BCP-47 locale codes for speech recognition
+const getRecognitionLang = (language) => {
+  switch (language) {
+    case 'hi': return 'hi-IN';
+    case 'ta': return 'ta-IN';
+    case 'te': return 'te-IN';
+    case 'hinglish': return 'hi-IN'; // Use Hindi recognizer for Hinglish
+    default: return 'en-IN';
+  }
+};
+
+// Map app language codes to TTS language codes
+const getTTSLang = (language) => {
+  switch (language) {
+    case 'hi': return 'hi-IN';
+    case 'ta': return 'ta-IN';
+    case 'te': return 'te-IN';
+    case 'hinglish': return 'hi-IN';
+    default: return 'en-IN';
+  }
+};
 
 export default function VoiceRecorderScreen({ navigation }) {
-  const [recording, setRecording] = useState(null);
+  const { t, language } = useLanguage();
   const [isListening, setIsListening] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [amplitude, setAmplitude] = useState(0);
   const [transcript, setTranscript] = useState('');
+  const [aiResponse, setAiResponse] = useState('');
+  const [error, setError] = useState('');
 
   const buttonScale = useRef(new Animated.Value(1)).current;
-  const amplitudeInterval = useRef(null);
 
+  // --- Speech Recognition Event Handlers ---
+  useSpeechRecognitionEvent('start', () => {
+    setIsListening(true);
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    setIsListening(false);
+    setAmplitude(0);
+  });
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const text = event.results[0]?.transcript || '';
+    setTranscript(text);
+
+    // If this is a final result, send to AI
+    if (event.isFinal && text.trim().length > 0) {
+      handleAICall(text);
+    }
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.log('Speech recognition error:', event.error, event.message);
+    setIsListening(false);
+    setAmplitude(0);
+
+    if (event.error === 'no-speech') {
+      setError(t('noSpeechDetected') || 'No speech detected. Please try again.');
+    } else if (event.error === 'not-allowed') {
+      setError('Microphone permission is required. Please enable it in Settings.');
+    } else if (event.error === 'network') {
+      setError('Network error. Please check your connection.');
+    } else {
+      setError(`Error: ${event.message || event.error}`);
+    }
+  });
+
+  useSpeechRecognitionEvent('volumechange', (event) => {
+    // event.value is between -2 and 10, normalize to 0-1
+    const normalized = Math.max(0, Math.min(1, (event.value + 2) / 12));
+    setAmplitude(normalized);
+  });
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (amplitudeInterval.current) {
-        clearInterval(amplitudeInterval.current);
-      }
+      ExpoSpeechRecognitionModule.abort();
+      Speech.stop();
     };
   }, []);
 
-  const startRecording = async () => {
+  // 🔥 Real AI call to Lambda
+  const getAIResponse = async (userMessage) => {
     try {
-      // Simulate recording with animated amplitude
-      setIsListening(true);
-      
-      // Simulate audio amplitude changes
-      amplitudeInterval.current = setInterval(() => {
-        // Generate random amplitude between 0 and 1
-        const randomAmplitude = Math.random() * 0.8 + 0.2;
-        setAmplitude(randomAmplitude);
-      }, 100);
-
-      // Button press animation
-      Animated.sequence([
-        Animated.spring(buttonScale, {
-          toValue: 0.9,
-          useNativeDriver: true,
+      const res = await fetch(LAMBDA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userMessage: userMessage,
+          language: language,
         }),
-        Animated.spring(buttonScale, {
-          toValue: 1,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Simulate transcription after 3 seconds
-      setTimeout(() => {
-        setTranscript('Recording started! Native audio will work after building the app.');
-      }, 1500);
+      });
+      const data = await res.json();
+      if (data.success) {
+        return data.response;
+      } else {
+        return 'Sorry, could not get a response. Please try again.';
+      }
     } catch (err) {
-      console.error('Failed to start recording', err);
+      console.error('Lambda error:', err);
+      return 'Network error. Please check your connection and try again.';
     }
   };
 
-  const stopRecording = async () => {
-    setIsListening(false);
-    setAmplitude(0);
-    
-    if (amplitudeInterval.current) {
-      clearInterval(amplitudeInterval.current);
+  const handleAICall = async (userText) => {
+    setIsLoading(true);
+    const response = await getAIResponse(userText);
+    setAiResponse(response);
+    setIsLoading(false);
+
+    // Save conversation to database
+    saveConversation('guest_user', userText, response, language).catch((err) =>
+      console.warn('Failed to save conversation:', err)
+    );
+  };
+
+  const startRecording = async () => {
+    setTranscript('');
+    setAiResponse('');
+    setError('');
+
+    // Stop any ongoing TTS
+    Speech.stop();
+    setIsSpeaking(false);
+
+    // Request permissions
+    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!result.granted) {
+      setError('Microphone permission is required. Please enable it in Settings.');
+      return;
     }
 
-    // Simulate transcription
-    setTranscript('यह एक उदाहरण है। Build the app with "expo run:android" to enable real audio recording.');
+    // Animate button
+    Animated.sequence([
+      Animated.spring(buttonScale, { toValue: 0.9, useNativeDriver: true }),
+      Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }),
+    ]).start();
+
+    // Start speech recognition
+    ExpoSpeechRecognitionModule.start({
+      lang: getRecognitionLang(language),
+      interimResults: true,
+      continuous: false,
+      addsPunctuation: true,
+      volumeChangeEventOptions: {
+        enabled: true,
+        intervalMillis: 200,
+      },
+    });
+  };
+
+  const stopRecording = () => {
+    ExpoSpeechRecognitionModule.stop();
   };
 
   const handleMicPress = () => {
@@ -75,9 +181,33 @@ export default function VoiceRecorderScreen({ navigation }) {
     }
   };
 
+  const handleListenResponse = () => {
+    if (isSpeaking) {
+      Speech.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    if (aiResponse) {
+      setIsSpeaking(true);
+      Speech.speak(aiResponse, {
+        language: getTTSLang(language),
+        rate: 0.9,
+        onDone: () => setIsSpeaking(false),
+        onStopped: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
+      });
+    }
+  };
+
   const handleClear = () => {
     setTranscript('');
+    setAiResponse('');
     setAmplitude(0);
+    setError('');
+    Speech.stop();
+    setIsSpeaking(false);
+    ExpoSpeechRecognitionModule.abort();
   };
 
   return (
@@ -85,65 +215,103 @@ export default function VoiceRecorderScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Voice Assistant</Text>
-          <Text style={styles.headerSubtitle}>आवाज़ सहायक</Text>
+        <Text style={styles.headerTitle}>{t('voiceAssistant')}</Text>
+        <TouchableOpacity style={styles.backButton}>
+          <Ionicons name="help-circle-outline" size={24} color={theme.colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Status */}
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>
+            {isListening
+              ? t('listening')
+              : isLoading
+              ? t('processing')
+              : transcript
+              ? t('processing')
+              : t('tapToSpeak')}
+          </Text>
         </View>
-        <View style={styles.backButton} />
-      </View>
 
-      {/* Status */}
-      <View style={styles.statusContainer}>
-        <Text style={styles.statusText}>
-          {isListening ? 'Listening...' : 'Tap to speak'}
-        </Text>
-        <Text style={styles.statusSubtext}>
-          {isListening ? 'सुन रहे हैं...' : 'बोलने के लिए टैप करें'}
-        </Text>
-      </View>
-
-      {/* Animated Blob */}
-      <View style={styles.blobContainer}>
-        <AnimatedBlob isListening={isListening} amplitude={amplitude} />
-      </View>
-
-      {/* Transcript */}
-      {transcript !== '' && (
-        <View style={styles.transcriptContainer}>
-          <Text style={styles.transcriptLabel}>Transcript:</Text>
-          <Text style={styles.transcriptText}>{transcript}</Text>
+        {/* Animated Blob */}
+        <View style={styles.blobContainer}>
+          <AnimatedBlob isListening={isListening} amplitude={amplitude} />
         </View>
-      )}
+
+        {/* Interaction Area */}
+        <View style={styles.interactionArea}>
+          {transcript !== '' && (
+            <View style={styles.messageBubble}>
+              <Text style={styles.messageLabel}>{t('youSaid')}</Text>
+              <Text style={styles.messageText}>{transcript}</Text>
+            </View>
+          )}
+
+          {/* Loading indicator while waiting for AI */}
+          {isLoading && (
+            <View style={[styles.messageBubble, styles.aiBubble]}>
+              <View style={styles.aiHeader}>
+                <MaterialCommunityIcons name="robot" size={16} color={theme.colors.primary} />
+                <Text style={styles.aiLabel}>BolBharat {t('assistant')}</Text>
+              </View>
+              <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginTop: 8 }} />
+              <Text style={[styles.messageText, { color: theme.colors.textSecondary, marginTop: 4 }]}>
+                Thinking...
+              </Text>
+            </View>
+          )}
+
+          {aiResponse !== '' && !isLoading && (
+            <View style={[styles.messageBubble, styles.aiBubble]}>
+              <View style={styles.aiHeader}>
+                <MaterialCommunityIcons name="robot" size={16} color={theme.colors.primary} />
+                <Text style={styles.aiLabel}>BolBharat {t('assistant')}</Text>
+              </View>
+              <Text style={styles.messageText}>{aiResponse}</Text>
+              <TouchableOpacity style={styles.listenButton} onPress={handleListenResponse}>
+                <Ionicons name={isSpeaking ? "stop-circle" : "volume-high"} size={18} color={theme.colors.white} />
+                <Text style={styles.listenText}>{isSpeaking ? 'Stop' : 'Listen'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {error !== '' && (
+            <View style={[styles.messageBubble, styles.errorBubble]}>
+              <Ionicons name="warning" size={16} color="#e53935" />
+              <Text style={[styles.messageText, { color: '#e53935', marginLeft: 8 }]}>{error}</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
 
       {/* Controls */}
-      <View style={styles.controls}>
-        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-          <TouchableOpacity
-            style={[styles.micButton, isListening && styles.micButtonActive]}
-            onPress={handleMicPress}
-          >
-            <Text style={styles.micIcon}>🎤</Text>
+      <View style={styles.footer}>
+        <View style={styles.controls}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleClear}>
+            <Ionicons name="trash-outline" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-        </Animated.View>
 
+          <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+            <TouchableOpacity
+              style={[styles.micButton, isListening && styles.micButtonActive]}
+              onPress={handleMicPress}
+              disabled={isLoading}
+            >
+              <Ionicons name={isListening ? "stop" : "mic"} size={32} color={theme.colors.white} />
+            </TouchableOpacity>
+          </Animated.View>
+
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => {}}>
+            <Ionicons name="keyboard-outline" size={24} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.controlLabel}>
-          {isListening ? 'Tap to stop' : 'Tap to start'}
+          {isLoading ? 'Getting AI response...' : isListening ? t('tapToStop') : t('tapToStart')}
         </Text>
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={startRecording}>
-          <Text style={styles.actionIcon}>🔄</Text>
-          <Text style={styles.actionText}>Retry</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={handleClear}>
-          <Text style={styles.actionIcon}>🗑️</Text>
-          <Text style={styles.actionText}>Clear</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -163,25 +331,14 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    color: theme.colors.textPrimary,
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
+    padding: theme.spacing.xs,
   },
   headerTitle: {
     ...theme.typography.h3,
     color: theme.colors.textPrimary,
   },
-  headerSubtitle: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
+  scrollContent: {
+    flexGrow: 1,
   },
   statusContainer: {
     alignItems: 'center',
@@ -191,80 +348,106 @@ const styles = StyleSheet.create({
     ...theme.typography.h3,
     color: theme.colors.textPrimary,
   },
-  statusSubtext: {
-    ...theme.typography.body2,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-  },
   blobContainer: {
-    flex: 1,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: theme.spacing.xl,
   },
-  transcriptContainer: {
-    marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+  interactionArea: {
     padding: theme.spacing.lg,
+  },
+  messageBubble: {
     backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  transcriptLabel: {
+  aiBubble: {
+    backgroundColor: theme.colors.primary + '10',
+    borderColor: theme.colors.primary + '30',
+  },
+  errorBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffebee',
+    borderColor: '#e53935' + '30',
+  },
+  messageLabel: {
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 4,
   },
-  transcriptText: {
+  aiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  aiLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    marginLeft: 4,
+    fontWeight: 'bold',
+  },
+  messageText: {
     ...theme.typography.body1,
     color: theme.colors.textPrimary,
   },
-  controls: {
+  listenButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: theme.spacing.lg,
+    backgroundColor: theme.colors.black,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginTop: theme.spacing.md,
+  },
+  listenText: {
+    color: theme.colors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  footer: {
+    paddingBottom: theme.spacing.xl,
+    alignItems: 'center',
+  },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xxl,
   },
   micButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: theme.colors.black,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   micButtonActive: {
-    backgroundColor: theme.colors.gray700,
+    backgroundColor: theme.colors.primary,
   },
-  micIcon: {
-    fontSize: 36,
+  secondaryButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   controlLabel: {
     ...theme.typography.body2,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.md,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-    gap: theme.spacing.lg,
-  },
-  actionButton: {
-    alignItems: 'center',
-    padding: theme.spacing.md,
-  },
-  actionIcon: {
-    fontSize: 24,
-    marginBottom: theme.spacing.xs,
-  },
-  actionText: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
   },
 });

@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { LanguageProvider } from './src/i18n/LanguageContext';
 import RootNavigator from './src/navigation';
 import { fonts } from './src/theme';
 
@@ -40,9 +41,9 @@ export default function App() {
   }
 
   return (
-    <>
+    <LanguageProvider>
       <RootNavigator />
       <StatusBar style="dark" />
-    </>
+    </LanguageProvider>
   );
 }
