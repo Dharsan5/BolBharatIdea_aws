@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
-import { theme } from '../theme';
+import theme from '../theme';
 
 const AnimatedBlob = ({ isListening, amplitude = 0 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;

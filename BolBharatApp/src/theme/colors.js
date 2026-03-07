@@ -1,5 +1,5 @@
-// Monochrome Color Theme
-export const colors = {
+// BolBharat App Color Theme
+const colors = {
   // Base colors
   white: '#FFFFFF',
   black: '#000000',
@@ -16,29 +16,35 @@ export const colors = {
   gray800: '#424242',
   gray900: '#212121',
   
-  // Functional colors
-  primary: '#000000',
-  secondary: '#424242',
-  background: '#FFFFFF',
-  surface: '#F5F5F5',
-  error: '#000000',
+  // Brand colors
+  primary: '#FF6B35',      // Orange - BolBharat primary color
+  secondary: '#004E89',    // Dark blue
+  accent: '#FFD23F',       // Yellow accent
+  
+  // Background colors
+  background: '#F9F9F9',
+  surface: '#FFFFFF',
+  
+  // Status colors
+  success: '#4CAF50',      // Green
+  error: '#F44336',        // Red
+  warning: '#FFC107',      // Amber
+  info: '#2196F3',         // Blue
   
   // Text colors
-  textPrimary: '#000000',
-  textSecondary: '#616161',
-  textDisabled: '#9E9E9E',
+  textPrimary: '#212121',
+  textSecondary: '#757575',
+  textDisabled: '#BDBDBD',
   textOnPrimary: '#FFFFFF',
   
   // Border colors
   border: '#E0E0E0',
   divider: '#BDBDBD',
   
-  // Status colors (monochrome)
-  success: '#424242',
-  warning: '#616161',
-  info: '#757575',
-  
   // Overlay
   overlay: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.2)',
 };
+
+export { colors };
+export default colors;

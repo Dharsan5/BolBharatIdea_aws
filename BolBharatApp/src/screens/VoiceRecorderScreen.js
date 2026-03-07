@@ -7,8 +7,8 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 import * as Speech from 'expo-speech';
-import { theme } from '../theme';
-import { useLanguage } from '../i18n/LanguageContext';
+import theme from '../theme';
+import { useLanguage } from '../context/LanguageContext';
 import AnimatedBlob from '../components/AnimatedBlob';
 import { saveConversation } from '../api/database';
 

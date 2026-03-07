@@ -16,10 +16,41 @@ export const borderRadius = {
   full: 9999,
 };
 
+// Elevation/shadow styles for both Android (elevation) and iOS (shadow)
 export const elevation = {
-  none: 0,
-  sm: 2,
-  md: 4,
-  lg: 8,
-  xl: 16,
+  none: {
+    elevation: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+  },
+  small: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 1.0,
+  },
+  medium: {
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.20,
+    shadowRadius: 2.5,
+  },
+  large: {
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.23,
+    shadowRadius: 4.0,
+  },
+  xlarge: {
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6.0,
+  },
 };

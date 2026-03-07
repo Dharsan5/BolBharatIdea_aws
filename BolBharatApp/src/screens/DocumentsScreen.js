@@ -1,155 +1,172 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Image,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { theme } from '../theme';
-import { useLanguage } from '../i18n/LanguageContext';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import theme from '../theme';
+import { useDocumentHistory } from '../context/DocumentHistoryContext';
 
-export default function DocumentsScreen() {
-  const { t } = useLanguage();
-  const [image, setImage] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showResult, setShowResult] = useState(false);
-  const [ocrResult, setOcrResult] = useState(null);
+export default function DocumentsScreen({ navigation }) {
+  const { documents, deleteDocument, isLoading } = useDocumentHistory();
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      processImage(result.assets[0].uri);
-    }
+  const handleOpenCamera = () => {
+    navigation.navigate('DocumentCamera');
   };
 
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Sorry, we need camera permissions to make this work!');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 1,
+  const handleDocumentPress = (document) => {
+    navigation.navigate('SimplifiedDocument', {
+      imageUri: document.imageUri,
+      originalUri: document.originalUri,
+      documentId: document.id,
     });
-
-    if (!result.canceled) {
-      processImage(result.assets[0].uri);
-    }
   };
 
-  const processImage = (uri) => {
-    setImage(uri);
-    setIsProcessing(true);
-    
-    // Simulate OCR processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      setOcrResult({
-        title: 'Pradhan Mantri Awas Yojana Notice',
-        summary: 'This notice confirms that your application for the rural housing scheme has been received and is currently under verification. You will receive an update within 15 working days.',
-        steps: [
-          'Keep your Aadhar card ready',
-          'Visit the block office if no update in 20 days',
-          'Do not share your OTP with anyone'
-        ]
+  const handleDeleteDocument = (documentId, documentTitle) => {
+    Alert.alert(
+      'Delete Document',
+      `Are you sure you want to delete "${documentTitle}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteDocument(documentId);
+          },
+        },
+      ]
+    );
+  };
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMs = now - date;
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
       });
-      setShowResult(true);
-    }, 3000);
+    }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t('documents')}</Text>
+  const renderDocumentCard = ({ item }) => (
+    <TouchableOpacity
+      style={styles.documentCard}
+      onPress={() => handleDocumentPress(item)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.documentImageContainer}>
+        <Image
+          source={{ uri: item.imageUri }}
+          style={styles.documentThumbnail}
+          resizeMode="cover"
+        />
+      </View>
+      <View style={styles.documentInfo}>
+        <Text style={styles.documentTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.documentType}>{item.documentType}</Text>
+        <View style={styles.documentMeta}>
+          <Ionicons name="time-outline" size={14} color={theme.colors.textSecondary} />
+          <Text style={styles.documentDate}>{formatDate(item.timestamp)}</Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleDeleteDocument(item.id, item.title)}
+      >
+        <Ionicons name="trash-outline" size={20} color={theme.colors.textSecondary} />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
+  const renderHeader = () => (
+    <>
+      {/* Camera Card */}
+      <TouchableOpacity style={styles.cameraCard} onPress={handleOpenCamera}>
+        <View style={styles.cameraIcon}>
+          <Ionicons name="camera" size={48} color={theme.colors.white} />
+        </View>
+        <Text style={styles.cameraText}>Scan Document</Text>
+        <Text style={styles.cameraSubtext}>दस्तावेज़ स्कैन करें</Text>
+      </TouchableOpacity>
+
+      {/* Instructions */}
+      <View style={styles.instructions}>
+        <Text style={styles.instructionsTitle}>How it works</Text>
+        <View style={styles.instructionItem}>
+          <Text style={styles.instructionNumber}>1</Text>
+          <Text style={styles.instructionText}>Take a photo of your document</Text>
+        </View>
+        <View style={styles.instructionItem}>
+          <Text style={styles.instructionNumber}>2</Text>
+          <Text style={styles.instructionText}>We'll extract and simplify the text</Text>
+        </View>
+        <View style={styles.instructionItem}>
+          <Text style={styles.instructionNumber}>3</Text>
+          <Text style={styles.instructionText}>Listen to explanation in your language</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Camera Card */}
-        <TouchableOpacity style={styles.cameraCard} onPress={takePhoto}>
-          <View style={styles.cameraIcon}>
-            <Ionicons name="camera" size={48} color={theme.colors.white} />
-          </View>
-          <Text style={styles.cameraText}>{t('scanDocument')}</Text>
-          <Text style={styles.cameraSubtext}>Take a clear photo of the notice</Text>
-        </TouchableOpacity>
+      {/* Recent Documents Header */}
+      <View style={styles.recentHeader}>
+        <Text style={styles.recentTitle}>Recent Documents</Text>
+        {documents.length > 0 && (
+          <Text style={styles.documentsCount}>{documents.length}</Text>
+        )}
+      </View>
+    </>
+  );
 
-        {/* Gallery Button */}
-        <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
-          <Ionicons name="images" size={24} color={theme.colors.textPrimary} />
-          <Text style={styles.galleryButtonText}>Upload from Gallery</Text>
-        </TouchableOpacity>
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialCommunityIcons
+        name="file-document-outline"
+        size={64}
+        color={theme.colors.textDisabled}
+      />
+      <Text style={styles.emptyText}>No documents yet</Text>
+      <Text style={styles.emptySubtext}>
+        Scan your first document to get started
+      </Text>
+    </View>
+  );
 
-        {/* Instructions */}
-        <View style={styles.instructions}>
-          <Text style={styles.instructionsTitle}>{t('howItWorks')}</Text>
-          <View style={styles.instructionItem}>
-            <Text style={styles.instructionNumber}>1</Text>
-            <Text style={styles.instructionText}>{t('takePhoto')}</Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <Text style={styles.instructionNumber}>2</Text>
-            <Text style={styles.instructionText}>{t('extractSimplify')}</Text>
-          </View>
-          <View style={styles.instructionItem}>
-            <Text style={styles.instructionNumber}>3</Text>
-            <Text style={styles.instructionText}>{t('listenExplanation')}</Text>
-          </View>
-        </View>
-      </ScrollView>
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Documents</Text>
+        <Text style={styles.subtitle}>दस्तावेज़</Text>
+      </View>
 
-      {/* Processing Modal */}
-      <Modal visible={isProcessing} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.processingCard}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.processingText}>Processing Document...</Text>
-            <Text style={styles.processingSubtext}>Our AI is simplifying this for you</Text>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Result Modal */}
-      <Modal visible={showResult} animationType="slide" transparent>
-        <View style={styles.resultOverlay}>
-          <View style={styles.resultCard}>
-            <View style={styles.resultHeader}>
-              <Text style={styles.resultTitle}>Document Summary</Text>
-              <TouchableOpacity onPress={() => setShowResult(false)}>
-                <Ionicons name="close" size={24} color={theme.colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.resultBody}>
-              {image && <Image source={{ uri: image }} style={styles.resultImage} />}
-              
-              <Text style={styles.docTitle}>{ocrResult?.title}</Text>
-              
-              <View style={styles.summaryBox}>
-                <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
-                <Text style={styles.summaryText}>{ocrResult?.summary}</Text>
-              </View>
-
-              <Text style={styles.sectionTitle}>What to do next:</Text>
-              {ocrResult?.steps.map((step, index) => (
-                <View key={index} style={styles.stepItem}>
-                  <Ionicons name="checkmark-circle" size={18} color={theme.colors.success || '#4CAF50'} />
-                  <Text style={styles.stepText}>{step}</Text>
-                </View>
-              ))}
-
-              <TouchableOpacity style={styles.listenButton}>
-                <Ionicons name="volume-high" size={20} color={theme.colors.white} />
-                <Text style={styles.listenButtonText}>Listen to Explanation</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <FlatList
+        data={documents}
+        renderItem={renderDocumentCard}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={!isLoading && renderEmptyState}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
@@ -168,20 +185,26 @@ const styles = StyleSheet.create({
     ...theme.typography.h2,
     color: theme.colors.textPrimary,
   },
-  content: {
+  subtitle: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  listContent: {
     padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
   },
   cameraCard: {
     backgroundColor: theme.colors.black,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.xl,
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
   },
   cameraIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: theme.colors.gray800,
     justifyContent: 'center',
     alignItems: 'center',
@@ -196,25 +219,11 @@ const styles = StyleSheet.create({
     ...theme.typography.body2,
     color: theme.colors.gray300,
   },
-  galleryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.xl,
-  },
-  galleryButtonText: {
-    ...theme.typography.button,
-    color: theme.colors.textPrimary,
-    marginLeft: theme.spacing.sm,
-  },
   instructions: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -245,107 +254,95 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     flex: 1,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.xl,
-  },
-  processingCard: {
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    alignItems: 'center',
-    width: '100%',
-  },
-  processingText: {
-    ...theme.typography.h3,
-    marginTop: theme.spacing.lg,
-    color: theme.colors.textPrimary,
-  },
-  processingSubtext: {
-    ...theme.typography.body2,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-  },
-  resultOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  resultCard: {
-    backgroundColor: theme.colors.white,
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    height: '90%',
-    padding: theme.spacing.lg,
-  },
-  resultHeader: {
+  recentHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  resultTitle: {
-    ...theme.typography.h3,
-  },
-  resultBody: {
-    flex: 1,
-  },
-  resultImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.lg,
-  },
-  docTitle: {
-    ...theme.typography.h4,
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
   },
-  summaryBox: {
-    backgroundColor: theme.colors.primary + '10',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
-    flexDirection: 'row',
-    marginBottom: theme.spacing.lg,
-  },
-  summaryText: {
-    ...theme.typography.body2,
-    color: theme.colors.textPrimary,
-    marginLeft: theme.spacing.sm,
-    flex: 1,
-  },
-  sectionTitle: {
+  recentTitle: {
     ...theme.typography.h4,
-    fontSize: 16,
-    marginBottom: theme.spacing.sm,
+    color: theme.colors.textPrimary,
   },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  stepText: {
-    ...theme.typography.body2,
-    marginLeft: theme.spacing.sm,
-  },
-  listenButton: {
+  documentsCount: {
     backgroundColor: theme.colors.black,
-    padding: theme.spacing.lg,
+    color: theme.colors.white,
+    fontFamily: theme.fontFamilies.semiBold,
+    fontSize: 12,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs / 2,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  documentCard: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  documentImageContainer: {
+    width: 60,
+    height: 80,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.gray100,
+    marginRight: theme.spacing.md,
+  },
+  documentThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  documentInfo: {
+    flex: 1,
+    marginRight: theme.spacing.sm,
+  },
+  documentTitle: {
+    ...theme.typography.body1,
+    fontFamily: theme.fontFamilies.semiBold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs / 2,
+  },
+  documentType: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  documentMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
+    gap: theme.spacing.xs / 2,
   },
-  listenButtonText: {
-    ...theme.typography.button,
-    color: theme.colors.white,
-    marginLeft: theme.spacing.sm,
-  }
+  documentDate: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.gray100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.xl,
+  },
+  emptyText: {
+    ...theme.typography.body1,
+    fontFamily: theme.fontFamilies.semiBold,
+    color: theme.colors.textPrimary,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.xs,
+  },
+  emptySubtext: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+  },
 });

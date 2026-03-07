@@ -2,20 +2,17 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { theme } from '../theme';
-import { useLanguage } from '../i18n/LanguageContext';
+import theme from '../theme';
 
 import HomeStackNavigator from './HomeStackNavigator';
-import SchemesScreen from '../screens/SchemesScreen';
-import DocumentsScreen from '../screens/DocumentsScreen';
-import FormsScreen from '../screens/FormsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import SchemesStackNavigator from './SchemesStackNavigator';
+import DocumentsStackNavigator from './DocumentsStackNavigator';
+import FormsStackNavigator from './FormsStackNavigator';
+import ProfileStackNavigator from './ProfileStackNavigator';
 
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabNavigator() {
-  const { t } = useLanguage();
-
   return (
     <Tab.Navigator
       screenOptions={{
@@ -30,7 +27,6 @@ export default function BottomTabNavigator() {
         name="Home"
         component={HomeStackNavigator}
         options={{
-          tabBarLabel: t('home'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
           ),
@@ -38,9 +34,8 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Schemes"
-        component={SchemesScreen}
+        component={SchemesStackNavigator}
         options={{
-          tabBarLabel: t('schemes'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "bulb" : "bulb-outline"} size={size} color={color} />
           ),
@@ -48,9 +43,8 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Documents"
-        component={DocumentsScreen}
+        component={DocumentsStackNavigator}
         options={{
-          tabBarLabel: t('documents'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "document-text" : "document-text-outline"} size={size} color={color} />
           ),
@@ -58,9 +52,8 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Forms"
-        component={FormsScreen}
+        component={FormsStackNavigator}
         options={{
-          tabBarLabel: t('forms'),
           tabBarIcon: ({ focused, color, size }) => (
             <MaterialCommunityIcons name={focused ? "file-document-edit" : "file-document-edit-outline"} size={size} color={color} />
           ),
@@ -68,9 +61,8 @@ export default function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileStackNavigator}
         options={{
-          tabBarLabel: t('profile'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
           ),

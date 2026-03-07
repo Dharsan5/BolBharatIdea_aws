@@ -1,305 +1,690 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme';
-import { useLanguage } from '../i18n/LanguageContext';
-import { saveApplication } from '../api/database';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors, spacing, typography } from '../theme';
+import { useSavedSchemes } from '../context/SavedSchemesContext';
 
-const LAMBDA_URL = 'https://ci45mlntxomy3rta7a2rb6qidu0wusvg.lambda-url.eu-north-1.on.aws/';
+const { width } = Dimensions.get('window');
 
-const CATEGORIES = ['All', 'Agriculture', 'Healthcare', 'Housing', 'Financial Services', 'Women Empowerment', 'Social Welfare'];
-
-const USER_ID = 'user123'; // Replace with real user ID later
-
-export default function SchemesScreen() {
-  const { t, language } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [schemes, setSchemes] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [applyingId, setApplyingId] = useState(null);
-  const [appliedIds, setAppliedIds] = useState([]);
-
-  const fetchSchemes = async (category, query) => {
-    setIsLoading(true);
-    setHasSearched(true);
-
-    const prompt = query
-      ? `List 5 Indian government schemes related to "${query}" in the ${category === 'All' ? 'any' : category} category.`
-      : `List 6 Indian government schemes in the ${category === 'All' ? 'all categories' : category} category.`;
-
-    try {
-      const res = await fetch(LAMBDA_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: 'en',
-          userMessage: `${prompt}
-          
-Return ONLY a JSON array (no explanation, no markdown) like this:
-[
+const MOCK_SCHEMES = [
   {
-    "id": "1",
-    "name": "Scheme Name",
-    "category": "Agriculture",
-    "relevance": 95,
-    "description": "Short description in 1 sentence.",
-    "eligibility": "Who can apply",
-    "benefit": "Key benefit amount or type"
-  }
-]`,
-        }),
+    id: '1',
+    name: 'Pradhan Mantri Fasal Bima Yojana',
+    nameHindi: 'प्रधानमंत्री फसल बीमा योजना',
+    category: 'Agriculture',
+    description: 'Crop insurance scheme for farmers against crop loss',
+    relevance: 95,
+    benefits: '₹2 Lakh coverage per farmer',
+  },
+  {
+    id: '2',
+    name: 'PM Kisan Samman Nidhi',
+    nameHindi: 'पीएम किसान सम्मान निधि',
+    category: 'Agriculture',
+    description: 'Direct income support of ₹6,000 per year to farmers',
+    relevance: 92,
+    benefits: '₹2,000 per installment, 3 times a year',
+  },
+  {
+    id: '3',
+    name: 'Ayushman Bharat',
+    nameHindi: 'आयुष्मान भारत',
+    category: 'Healthcare',
+    description: 'Health insurance scheme providing free treatment',
+    relevance: 88,
+    benefits: '₹5 Lakh annual health coverage',
+  },
+  {
+    id: '4',
+    name: 'PM Awas Yojana',
+    nameHindi: 'पीएम आवास योजना',
+    category: 'Housing',
+    description: 'Affordable housing scheme for economically weaker sections',
+    relevance: 85,
+    benefits: '₹2.5 Lakh subsidy on home loans',
+  },
+  {
+    id: '5',
+    name: 'Pradhan Mantri Mudra Yojana',
+    nameHindi: 'प्रधानमंत्री मुद्रा योजना',
+    category: 'Finance',
+    description: 'Micro-loans for small businesses and entrepreneurs',
+    relevance: 82,
+    benefits: 'Loans up to ₹10 Lakh',
+  },
+];
+
+const QUICK_SEARCH_CATEGORIES = [
+  { id: 'agriculture', label: 'Agriculture', iconFamily: MaterialCommunityIcons, iconName: 'leaf' },
+  { id: 'healthcare', label: 'Healthcare', iconFamily: Ionicons, iconName: 'medical-outline' },
+  { id: 'education', label: 'Education', iconFamily: Ionicons, iconName: 'school-outline' },
+  { id: 'housing', label: 'Housing', iconFamily: Ionicons, iconName: 'home-outline' },
+  { id: 'finance', label: 'Finance', iconFamily: Ionicons, iconName: 'cash-outline' },
+  { id: 'employment', label: 'Employment', iconFamily: Ionicons, iconName: 'briefcase-outline' },
+];
+
+export default function SchemesScreen({ navigation }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [schemes, setSchemes] = useState(MOCK_SCHEMES);
+  
+  const { getSavedSchemesCount } = useSavedSchemes();
+  const savedCount = getSavedSchemesCount();
+  
+  const voiceButtonScale = useRef(new Animated.Value(1)).current;
+  const searchBarFade = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (isVoiceMode) {
+      // Animate voice button
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(voiceButtonScale, {
+            toValue: 1.1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(voiceButtonScale, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      voiceButtonScale.setValue(1);
+    }
+  }, [isVoiceMode]);
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    
+    if (query.trim().length > 2) {
+      // Navigate to scheme list with search results
+      navigation.navigate('SchemeList', {
+        query: query,
+        category: 'all',
       });
+    }
+  };
 
-      const data = await res.json();
-      const text = data.response || '';
-
-      // Extract JSON from response
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setSchemes(parsed);
-      } else {
-        setSchemes([]);
-      }
-    } catch (err) {
-      console.error('Schemes fetch error:', err);
-      setSchemes([]);
-    } finally {
-      setIsLoading(false);
+  const handleVoiceSearch = () => {
+    setIsVoiceMode(!isVoiceMode);
+    
+    if (!isVoiceMode) {
+      // TODO: Implement actual voice recording
+      console.log('Starting voice search...');
+      
+      // Simulate voice search
+      setTimeout(() => {
+        setIsVoiceMode(false);
+        setSearchQuery('farming schemes');
+        handleSearch('farming schemes');
+      }, 3000);
     }
   };
 
   const handleCategorySelect = (category) => {
-    setActiveCategory(category);
-    fetchSchemes(category, searchQuery);
+    setSelectedCategory(category.id);
+    // Navigate to scheme list filtered by category
+    navigation.navigate('SchemeList', {
+      query: category.label,
+      category: category.label,
+    });
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      fetchSchemes(activeCategory, searchQuery);
-    }
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSelectedCategory(null);
+    setSchemes(MOCK_SCHEMES);
   };
 
-  const handleApply = async (scheme) => {
-    setApplyingId(scheme.id);
-    await saveApplication(USER_ID, scheme.name);
-    setAppliedIds(prev => [...prev, scheme.id]);
-    setApplyingId(null);
+  const handleViewDetails = (schemeId) => {
+    navigation.navigate('SchemeDetail', { schemeId });
+  };
+
+  const handleViewSaved = () => {
+    navigation.navigate('SavedSchemes');
   };
 
   const renderSchemeCard = ({ item }) => (
-    <View style={styles.schemeCard}>
+    <TouchableOpacity style={styles.schemeCard} activeOpacity={0.7}>
       <View style={styles.cardHeader}>
         <View style={styles.relevanceBadge}>
-          <Text style={styles.relevanceText}>{item.relevance}% match</Text>
+          <View style={styles.relevanceDot} />
+          <Text style={styles.relevanceText}>{item.relevance}% Match</Text>
         </View>
-        <Text style={styles.category}>{item.category}</Text>
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryText}>{item.category}</Text>
+        </View>
       </View>
-
+      
       <Text style={styles.schemeName}>{item.name}</Text>
-      <Text style={styles.schemeDescription}>{item.description}</Text>
-
-      {item.eligibility && (
-        <View style={styles.infoRow}>
-          <Ionicons name="people-outline" size={14} color={theme.colors.textSecondary} />
-          <Text style={styles.infoText}>{item.eligibility}</Text>
-        </View>
-      )}
-
-      {item.benefit && (
-        <View style={styles.infoRow}>
-          <Ionicons name="gift-outline" size={14} color={theme.colors.textSecondary} />
-          <Text style={styles.infoText}>{item.benefit}</Text>
-        </View>
-      )}
-
-      <TouchableOpacity
-        style={[styles.applyButton, appliedIds.includes(item.id) && styles.applyButtonDone]}
-        onPress={() => handleApply(item)}
-        disabled={appliedIds.includes(item.id) || applyingId === item.id}
+      <Text style={styles.schemeNameHindi}>{item.nameHindi}</Text>
+      <Text style={styles.schemeDescription} numberOfLines={2}>
+        {item.description}
+      </Text>
+      
+      <View style={styles.benefitsContainer}>
+        <Text style={styles.benefitsLabel}>Benefits:</Text>
+        <Text style={styles.benefitsText}>{item.benefits}</Text>
+      </View>
+      
+      <TouchableOpacity 
+        style={styles.detailsButton}
+        onPress={() => handleViewDetails(item.id)}
       >
-        {applyingId === item.id ? (
-          <ActivityIndicator size="small" color={theme.colors.white} />
-        ) : (
-          <Text style={styles.applyButtonText}>
-            {appliedIds.includes(item.id) ? '✅ Applied' : 'Apply Now'}
-          </Text>
-        )}
+        <Text style={styles.detailsButtonText}>View Details</Text>
+        <Ionicons name="arrow-forward" size={16} color={colors.white} />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{t('schemes')}</Text>
-        <Text style={styles.subtitle}>AI-powered scheme finder</Text>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search schemes (e.g. crop loan, housing)"
-          placeholderTextColor={theme.colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Ionicons name="search" size={20} color={theme.colors.white} />
+        <View style={styles.headerLeft}>
+          <Text style={styles.title}>Find Schemes</Text>
+          <Text style={styles.subtitle}>योजनाएं खोजें</Text>
+        </View>
+        <TouchableOpacity style={styles.savedButton} onPress={handleViewSaved}>
+          <Ionicons name="bookmark-outline" size={24} color={colors.black} />
+          {savedCount > 0 && (
+            <View style={styles.savedBadge}>
+              <Text style={styles.savedBadgeText}>{savedCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
-      {/* Category Tabs */}
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {CATEGORIES.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[styles.filterTab, activeCategory === category && styles.filterTabActive]}
-              onPress={() => handleCategorySelect(category)}
-            >
-              <Text style={[styles.filterTabText, activeCategory === category && styles.filterTabTextActive]}>
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Search Bar with Voice */}
+      <View style={styles.searchSection}>
+        {!isVoiceMode ? (
+          <View style={styles.searchContainer}>
+            <Ionicons name="search-outline" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search schemes..."
+              placeholderTextColor={colors.textDisabled}
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <View style={styles.voiceActiveContainer}>
+            <ActivityIndicator size="small" color={colors.black} />
+            <Text style={styles.voiceActiveText}>Listening...</Text>
+          </View>
+        )}
+
+        <Animated.View style={{ transform: [{ scale: voiceButtonScale }] }}>
+          <TouchableOpacity
+            style={[
+              styles.voiceButton,
+              isVoiceMode && styles.voiceButtonActive,
+            ]}
+            onPress={handleVoiceSearch}
+          >
+            <Ionicons name="mic-outline" size={24} color={isVoiceMode ? colors.white : colors.black} />
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Finding schemes for you...</Text>
+      {/* Quick Search Categories */}
+      {!searchQuery && (
+        <View style={styles.categoriesSection}>
+          <Text style={styles.categoriesTitle}>Quick Search</Text>
+          <View style={styles.categoriesGrid}>
+            {QUICK_SEARCH_CATEGORIES.map((category) => {
+              const IconComponent = category.iconFamily;
+              return (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryChip,
+                    selectedCategory === category.id && styles.categoryChipSelected,
+                  ]}
+                  onPress={() => handleCategorySelect(category)}
+                >
+                  <IconComponent 
+                    name={category.iconName} 
+                    size={20} 
+                    color={selectedCategory === category.id ? colors.white : colors.black}
+                    style={styles.categoryIcon}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryLabel,
+                      selectedCategory === category.id && styles.categoryLabelSelected,
+                    ]}
+                  >
+                    {category.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-      ) : !hasSearched ? (
-        <View style={styles.centerContainer}>
-          <Ionicons name="search-circle-outline" size={80} color={theme.colors.border} />
-          <Text style={styles.emptyTitle}>Discover Government Schemes</Text>
-          <Text style={styles.emptyText}>Select a category or search to find schemes you qualify for</Text>
-          <TouchableOpacity style={styles.exploreButton} onPress={() => handleCategorySelect('All')}>
-            <Text style={styles.exploreButtonText}>Explore All Schemes</Text>
-          </TouchableOpacity>
-        </View>
-      ) : schemes.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.emptyText}>No schemes found. Try a different search.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={schemes}
-          renderItem={renderSchemeCard}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-        />
       )}
+
+      {/* Check Eligibility Banner */}
+      {!searchQuery && (
+        <TouchableOpacity
+          style={styles.eligibilityBanner}
+          onPress={() => navigation.navigate('EligibilityChecker')}
+        >
+          <View style={styles.eligibilityBannerIcon}>
+            <Ionicons name="checkmark-circle" size={28} color={colors.black} />
+          </View>
+          <View style={styles.eligibilityBannerContent}>
+            <Text style={styles.eligibilityBannerTitle}>Check Your Eligibility</Text>
+            <Text style={styles.eligibilityBannerSubtitle}>
+              Answer a few questions to find schemes you qualify for
+            </Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
+      )}
+
+      {/* Results Header */}
+      <View style={styles.resultsHeader}>
+        <Text style={styles.resultsText}>
+          {schemes.length} schemes found
+        </Text>
+        {searchQuery && (
+          <Text style={styles.resultsQuery}>for "{searchQuery}"</Text>
+        )}
+      </View>
+
+      {/* Schemes List */}
+      <FlatList
+        data={schemes}
+        renderItem={renderSchemeCard}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={64} color={colors.textDisabled} style={styles.emptyIcon} />
+            <Text style={styles.emptyText}>No schemes found</Text>
+            <Text style={styles.emptySubtext}>
+              Try adjusting your search or use voice search
+            </Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    padding: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  title: { ...theme.typography.h2, color: theme.colors.textPrimary },
-  subtitle: { ...theme.typography.body2, color: theme.colors.textSecondary, marginTop: 2 },
-  searchContainer: {
+  header: {
     flexDirection: 'row',
-    padding: theme.spacing.lg,
-    gap: theme.spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 32,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  savedButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.gray50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  savedBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: colors.black,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  savedBadgeText: {
+    fontSize: 11,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.white,
+  },
+  
+  // Search Section
+  searchSection: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.gray50,
+    borderWidth: 2,
+    borderColor: colors.gray200,
+    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    ...theme.typography.body1,
-    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm,
   },
-  searchButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: theme.colors.black,
-    borderRadius: theme.borderRadius.md,
+  clearButton: {
+    padding: spacing.xs,
+  },
+  voiceActiveContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.gray50,
+    borderWidth: 2,
+    borderColor: colors.black,
+    borderRadius: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  voiceActiveText: {
+    fontSize: 16,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.textPrimary,
+  },
+  voiceButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.black,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  filterContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
+  voiceButtonActive: {
+    backgroundColor: '#FF4444',
   },
-  filterTab: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    marginRight: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  
+  // Categories Section
+  categoriesSection: {
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
   },
-  filterTabActive: { backgroundColor: theme.colors.black, borderColor: theme.colors.black },
-  filterTabText: { ...theme.typography.body2, color: theme.colors.textPrimary },
-  filterTabTextActive: { color: theme.colors.white, fontWeight: 'bold' },
-  listContent: { padding: theme.spacing.lg },
+  categoriesTitle: {
+    fontSize: 16,
+    fontFamily: typography.fontFamily.semiBold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.gray200,
+    borderRadius: 20,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  categoryChipSelected: {
+    borderColor: colors.black,
+    backgroundColor: colors.black,
+  },
+  categoryLabel: {
+    fontSize: 13,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.textSecondary,
+  },
+  categoryLabelSelected: {
+    color: colors.white,
+    fontFamily: typography.fontFamily.semiBold,
+  },
+  
+  // Eligibility Banner
+  eligibilityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.black,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  eligibilityBannerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.gray50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  eligibilityBannerContent: {
+    flex: 1,
+  },
+  eligibilityBannerTitle: {
+    fontSize: 16,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs / 2,
+  },
+  eligibilityBannerSubtitle: {
+    fontSize: 13,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  
+  // Results Header
+  resultsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  resultsText: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.semiBold,
+    color: colors.textPrimary,
+  },
+  resultsQuery: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+  },
+  
+  // Scheme Cards
+  listContent: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
   schemeCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.gray200,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: spacing.md,
   },
   relevanceBadge: {
-    backgroundColor: theme.colors.black,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-  },
-  relevanceText: { fontSize: 11, color: theme.colors.white, fontWeight: 'bold' },
-  category: { ...theme.typography.caption, color: theme.colors.textSecondary },
-  schemeName: { ...theme.typography.h4, color: theme.colors.textPrimary, marginBottom: 4 },
-  schemeDescription: { ...theme.typography.body2, color: theme.colors.textSecondary, marginBottom: theme.spacing.sm },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 4 },
-  infoText: { ...theme.typography.caption, color: theme.colors.textSecondary, flex: 1 },
-  applyButton: {
-    backgroundColor: theme.colors.black,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
-    alignSelf: 'flex-start',
-    marginTop: theme.spacing.md,
-    minWidth: 100,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.gray50,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 12,
+    gap: spacing.xs,
   },
-  applyButtonDone: { backgroundColor: '#4CAF50' },
-  applyButtonText: { color: theme.colors.white, fontWeight: 'bold', fontSize: 13 },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xl },
-  loadingText: { ...theme.typography.body2, color: theme.colors.textSecondary, marginTop: theme.spacing.md },
-  emptyTitle: { ...theme.typography.h3, color: theme.colors.textPrimary, marginTop: theme.spacing.lg, textAlign: 'center' },
-  emptyText: { ...theme.typography.body2, color: theme.colors.textSecondary, textAlign: 'center', marginTop: theme.spacing.sm },
-  exploreButton: {
-    backgroundColor: theme.colors.black,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.borderRadius.lg,
-    marginTop: theme.spacing.xl,
+  relevanceDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4CAF50',
   },
-  exploreButtonText: { color: theme.colors.white, fontWeight: 'bold' },
+  relevanceText: {
+    fontSize: 12,
+    fontFamily: typography.fontFamily.semiBold,
+    color: colors.textPrimary,
+  },
+  categoryBadge: {
+    backgroundColor: colors.black,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 12,
+  },
+  categoryText: {
+    fontSize: 11,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.white,
+  },
+  schemeName: {
+    fontSize: 18,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    lineHeight: 24,
+  },
+  schemeNameHindi: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  schemeDescription: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  benefitsContainer: {
+    backgroundColor: colors.gray50,
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  benefitsLabel: {
+    fontSize: 11,
+    fontFamily: typography.fontFamily.semiBold,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs / 2,
+  },
+  benefitsText: {
+    fontSize: 13,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.textPrimary,
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.black,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.semiBold,
+    color: colors.white,
+  },
+  
+  // Empty State
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxl * 2,
+  },
+  emptyIcon: {
+    marginBottom: spacing.lg,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontFamily: typography.fontFamily.semiBold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
 });
