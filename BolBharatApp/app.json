@@ -12,7 +12,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow BolBharat to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow BolBharat to use the microphone for voice input."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +25,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.anonymous.BolBharatApp"
+      "package": "com.anonymous.BolBharatApp",
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,9 +41,16 @@
         {
           "microphonePermission": "Allow BolBharat to use the microphone for voice input.",
           "speechRecognitionPermission": "Allow BolBharat to use speech recognition.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d4c65d55-91bf-4510-8c3d-1068123a95f2"
+      }
+    }
   }
 }
