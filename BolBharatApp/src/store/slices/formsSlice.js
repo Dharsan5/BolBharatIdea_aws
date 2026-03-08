@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getApplications, saveApplication } from '../../api/database';
 
 // Async thunks for form operations
 
@@ -30,10 +31,11 @@ export const submitForm = createAsyncThunk(
 
 export const fetchApplications = createAsyncThunk(
   'forms/fetchApplications',
-  async (_, { rejectWithValue }) => {
+  async (userId, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      return [];
+      if (!userId) return [];
+      const response = await getApplications(userId);
+      return response?.applications || response?.data || response?.items || [];
     } catch (error) {
       return rejectWithValue(error.message);
     }

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import theme from '../theme';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
@@ -9,7 +11,27 @@ import { useLanguage } from '../context/LanguageContext';
 export default function ProfileScreen({ navigation }) {
   const [offlineMode, setOfflineMode] = useState(false);
   const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const { currentLanguage } = useLanguage();
+
+  const loadProfile = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem('userProfile');
+      if (stored) setUserProfile(JSON.parse(stored));
+    } catch (e) {
+      console.error('Failed to load profile', e);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    loadProfile();
+  }, [loadProfile]));
+
+  const displayName = userProfile?.fullName || 'User';
+  const displayPhone = userProfile?.phoneNumber || '';
+  const displayLocation = userProfile?.state
+    ? `${userProfile.state}${userProfile.district ? ', ' + userProfile.district : ''}`
+    : 'Not set';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -24,8 +46,8 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.avatar}>
             <Ionicons name="person" size={48} color={theme.colors.white} />
           </View>
-          <Text style={styles.userName}>User Name</Text>
-          <Text style={styles.userPhone}>+91 98765 43210</Text>
+          <Text style={styles.userName}>{displayName}</Text>
+          {!!displayPhone && <Text style={styles.userPhone}>{displayPhone}</Text>}
         </View>
 
         {/* Settings Section */}
@@ -55,7 +77,7 @@ export default function ProfileScreen({ navigation }) {
             </View>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Location</Text>
-              <Text style={styles.settingValue}>Not set</Text>
+              <Text style={styles.settingValue}>{displayLocation}</Text>
             </View>
             <Feather name="chevron-right" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>

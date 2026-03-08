@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, typography } from '../theme';
 
 // Major Indian states
@@ -50,22 +51,46 @@ const STATES = [
 ];
 
 export default function LocationSettingsScreen({ navigation }) {
-  // TODO: Load saved location from AsyncStorage or global state
   const [selectedState, setSelectedState] = useState('');
   const [district, setDistrict] = useState('');
   const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
   const [showStatePicker, setShowStatePicker] = useState(false);
 
-  const handleSave = () => {
+  // Load saved location on mount
+  useEffect(() => {
+    const loadLocation = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('userProfile');
+        if (stored) {
+          const profile = JSON.parse(stored);
+          if (profile.state) setSelectedState(profile.state);
+          if (profile.district) setDistrict(profile.district);
+          if (profile.city) setCity(profile.city);
+          if (profile.pincode) setPincode(profile.pincode);
+        }
+      } catch (e) {
+        console.error('Failed to load location', e);
+      }
+    };
+    loadLocation();
+  }, []);
+
+  const handleSave = async () => {
     if (!selectedState) {
       Alert.alert('Required', 'Please select your state');
       return;
     }
 
-    // TODO: Save to AsyncStorage or global state management
-    // TODO: Update user profile in backend
-    navigation.goBack();
+    try {
+      const stored = await AsyncStorage.getItem('userProfile');
+      const profile = stored ? JSON.parse(stored) : {};
+      const updated = { ...profile, state: selectedState, district, city, pincode };
+      await AsyncStorage.setItem('userProfile', JSON.stringify(updated));
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save location. Please try again.');
+    }
   };
 
   const handleCancel = () => {

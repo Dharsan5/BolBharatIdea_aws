@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,14 @@ import {
   TextInput,
   Modal,
   Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
+import { getApplications } from '../api/database';
 import { colors, spacing, typography } from '../theme';
 
 const STATUS_COLORS = {
@@ -21,6 +25,9 @@ const STATUS_COLORS = {
   approved: '#4CAF50',
   rejected: '#F44336',
   pending: '#FFC107',
+  completed: '#00BCD4',
+  under_review: '#9C27B0',
+  draft: '#757575',
 };
 
 const STATUS_ICONS = {
@@ -30,7 +37,12 @@ const STATUS_ICONS = {
   approved: 'checkmark-circle-outline',
   rejected: 'close-circle-outline',
   pending: 'time-outline',
+  completed: 'trophy-outline',
+  under_review: 'eye-outline',
+  draft: 'document-outline',
 };
+
+const STATUS_STEPS = ['submitted', 'processing', 'verification', 'approved'];
 
 const FILTER_OPTIONS = [
   { key: 'all', labelEn: 'All', labelHi: 'सभी', icon: 'apps-outline' },
@@ -41,7 +53,85 @@ const FILTER_OPTIONS = [
   { key: 'rejected', labelEn: 'Rejected', labelHi: 'अस्वीकृत', icon: 'close-circle-outline' },
 ];
 
+const generateTimeline = (currentStatus) => {
+  const statusOrder = ['submitted', 'processing', 'verification', 'approved'];
+  const currentIndex = statusOrder.indexOf(currentStatus);
+  const effectiveIndex = currentStatus === 'rejected' ? 2 : currentIndex;
+
+  return [
+    { key: 'submitted', labelEn: 'Submitted', labelHi: 'जमा किया गया' },
+    { key: 'processing', labelEn: 'Processing', labelHi: 'संसाधित' },
+    { key: 'verification', labelEn: 'Verification', labelHi: 'सत्यापन' },
+    {
+      key: currentStatus === 'rejected' ? 'rejected' : 'approved',
+      labelEn: currentStatus === 'rejected' ? 'Rejected' : 'Approved',
+      labelHi: currentStatus === 'rejected' ? 'अस्वीकृत' : 'स्वीकृत',
+    },
+  ].map((step, index) => ({
+    ...step,
+    completed: index <= effectiveIndex,
+    current: index === effectiveIndex,
+  }));
+};
+
+const normalizeApplication = (app) => ({
+  id: app.id || app.referenceNumber || `app-${Date.now()}`,
+  referenceNumber:
+    app.referenceNumber ||
+    `BOLB${(app.id || '').slice(-8) || Date.now().toString().slice(-8)}`,
+  formName: app.formName || app.schemeName || app.scheme_name || 'Application',
+  formNameHindi:
+    app.formNameHindi || app.schemeNameHindi || app.formName || 'आवेदन',
+  status: app.status || 'submitted',
+  submittedDate:
+    app.submittedDate || app.createdAt || app.created_at
+      ? new Date(
+          app.submittedDate || app.createdAt || app.created_at
+        ).toLocaleDateString('en-IN')
+      : new Date().toLocaleDateString('en-IN'),
+  lastUpdated:
+    app.lastUpdated || app.updatedAt || app.updated_at
+      ? new Date(
+          app.lastUpdated || app.updatedAt || app.updated_at
+        ).toLocaleDateString('en-IN')
+      : new Date().toLocaleDateString('en-IN'),
+  department: app.department || 'Government of India',
+  departmentHindi: app.departmentHindi || 'भारत सरकार',
+  estimatedCompletion:
+    app.estimatedCompletion ||
+    (['submitted', 'processing', 'verification'].includes(
+      app.status || 'submitted'
+    )
+      ? '5-7 days'
+      : null),
+  timeline: app.timeline || generateTimeline(app.status || 'submitted'),
+});
+
+function InfoRow({ icon, label, value, noBorder }) {
+  return (
+    <View style={[styles.infoRow, !noBorder && styles.infoRowBorder]}>
+      <Ionicons
+        name={icon}
+        size={16}
+        color={colors.textSecondary}
+        style={styles.infoRowIcon}
+      />
+      <View style={styles.infoRowContent}>
+        <Text style={styles.infoRowLabel}>{label}</Text>
+        <Text style={styles.infoRowValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function ApplicationTrackingScreen({ route, navigation }) {
+  const userProfile = useSelector((state) => state.user?.profile);
+  const userId =
+    userProfile?.id ||
+    userProfile?.userId ||
+    userProfile?.phone ||
+    userProfile?.phoneNumber;
+
   const [language, setLanguage] = useState('english');
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
@@ -49,15 +139,14 @@ export default function ApplicationTrackingScreen({ route, navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadApplications();
-    
-    // Check if navigated from confirmation screen with new application
+    loadApplications(true);
     if (route.params?.referenceNumber) {
-      setTimeout(() => {
-        searchByReference(route.params.referenceNumber);
-      }, 500);
+      setTimeout(() => searchByReference(route.params.referenceNumber), 800);
     }
   }, []);
 
@@ -65,100 +154,97 @@ export default function ApplicationTrackingScreen({ route, navigation }) {
     filterApplications();
   }, [applications, selectedFilter, searchQuery]);
 
-  const loadApplications = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('submittedApplications');
-      if (stored) {
-        const apps = JSON.parse(stored);
-        setApplications(apps);
-      } else {
-        // Mock data for demonstration
-        const mockApplications = generateMockApplications();
-        setApplications(mockApplications);
-        await AsyncStorage.setItem('submittedApplications', JSON.stringify(mockApplications));
+  const loadApplications = useCallback(
+    async (showLoader = false) => {
+      if (showLoader) setIsLoading(true);
+      setError(null);
+
+      try {
+        if (userId) {
+          const response = await getApplications(userId);
+          if (response?.success) {
+            const rawApps =
+              response.applications ||
+              response.data ||
+              response.items ||
+              [];
+            if (rawApps.length > 0) {
+              const apps = rawApps.map(normalizeApplication);
+              setApplications(apps);
+              await AsyncStorage.setItem(
+                'submittedApplications',
+                JSON.stringify(apps)
+              );
+              return;
+            }
+          }
+        }
+
+        // Fallback: AsyncStorage
+        const stored = await AsyncStorage.getItem('submittedApplications');
+        if (stored) {
+          setApplications(JSON.parse(stored).map(normalizeApplication));
+        } else {
+          setApplications([]);
+        }
+      } catch (err) {
+        console.error('Error loading applications:', err);
+        try {
+          const stored = await AsyncStorage.getItem('submittedApplications');
+          if (stored) {
+            setApplications(JSON.parse(stored).map(normalizeApplication));
+          } else {
+            setError(
+              language === 'hindi'
+                ? 'डेटा लोड करने में विफल'
+                : 'Failed to load data'
+            );
+            setApplications([]);
+          }
+        } catch {
+          setError(
+            language === 'hindi'
+              ? 'डेटा लोड करने में विफल'
+              : 'Failed to load data'
+          );
+          setApplications([]);
+        }
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
-    } catch (error) {
-      console.error('Error loading applications:', error);
-    }
-  };
-
-  const generateMockApplications = () => {
-    const statuses = ['submitted', 'processing', 'verification', 'approved', 'rejected'];
-    const forms = [
-      { name: 'Ration Card Application', nameHi: 'राशन कार्ड आवेदन' },
-      { name: 'Health Card Application', nameHi: 'स्वास्थ्य कार्ड आवेदन' },
-      { name: 'Crop Insurance', nameHi: 'फसल बीमा' },
-      { name: 'Voter ID Application', nameHi: 'मतदाता पहचान पत्र आवेदन' },
-      { name: 'Pension Application', nameHi: 'पेंशन आवेदन' },
-    ];
-
-    return Array.from({ length: 8 }, (_, i) => {
-      const form = forms[i % forms.length];
-      const status = statuses[i % statuses.length];
-      const daysAgo = Math.floor(Math.random() * 30) + 1;
-      const submissionDate = new Date();
-      submissionDate.setDate(submissionDate.getDate() - daysAgo);
-
-      return {
-        id: `app-${i + 1}`,
-        referenceNumber: `BOLB${String(12345678 + i).padStart(8, '0')}`,
-        formName: form.name,
-        formNameHindi: form.nameHi,
-        status: status,
-        submittedDate: submissionDate.toLocaleDateString('en-IN'),
-        lastUpdated: new Date(submissionDate.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN'),
-        department: 'Department of Social Welfare',
-        departmentHindi: 'समाज कल्याण विभाग',
-        estimatedCompletion: status === 'approved' || status === 'rejected' ? null : '3-5 days',
-        timeline: generateTimeline(status),
-      };
-    });
-  };
-
-  const generateTimeline = (currentStatus) => {
-    const allSteps = [
-      { key: 'submitted', labelEn: 'Submitted', labelHi: 'जमा किया गया', date: null },
-      { key: 'processing', labelEn: 'Processing', labelHi: 'संसाधित हो रहा है', date: null },
-      { key: 'verification', labelEn: 'Verification', labelHi: 'सत्यापन', date: null },
-      { key: currentStatus === 'approved' ? 'approved' : 'rejected', labelEn: currentStatus === 'approved' ? 'Approved' : currentStatus === 'rejected' ? 'Rejected' : 'Final Review', labelHi: currentStatus === 'approved' ? 'स्वीकृत' : currentStatus === 'rejected' ? 'अस्वीकृत' : 'अंतिम समीक्षा', date: null },
-    ];
-
-    const statusOrder = ['submitted', 'processing', 'verification', 'approved', 'rejected'];
-    const currentIndex = statusOrder.indexOf(currentStatus);
-
-    return allSteps.map((step, index) => ({
-      ...step,
-      completed: index <= currentIndex,
-      current: index === currentIndex,
-    }));
-  };
+    },
+    [userId, language]
+  );
 
   const filterApplications = () => {
-    let filtered = applications;
+    let filtered = [...applications];
 
-    // Filter by status
     if (selectedFilter !== 'all') {
-      filtered = filtered.filter(app => app.status === selectedFilter);
+      filtered = filtered.filter((app) => app.status === selectedFilter);
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(app =>
-        app.referenceNumber.toLowerCase().includes(query) ||
-        app.formName.toLowerCase().includes(query) ||
-        app.formNameHindi.includes(query)
+      filtered = filtered.filter(
+        (app) =>
+          app.referenceNumber?.toLowerCase().includes(query) ||
+          app.formName?.toLowerCase().includes(query) ||
+          app.formNameHindi?.includes(query)
       );
     }
 
-    // Sort by date (most recent first)
-    filtered.sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+    filtered.sort((a, b) => {
+      const dA = new Date(a.submittedDate);
+      const dB = new Date(b.submittedDate);
+      return isNaN(dB) || isNaN(dA) ? 0 : dB - dA;
+    });
 
     setFilteredApplications(filtered);
   };
 
   const searchByReference = (refNumber) => {
-    const app = applications.find(a => a.referenceNumber === refNumber);
+    const app = applications.find((a) => a.referenceNumber === refNumber);
     if (app) {
       setSelectedApplication(app);
       setIsDetailModalVisible(true);
@@ -172,66 +258,76 @@ export default function ApplicationTrackingScreen({ route, navigation }) {
     }
   };
 
-  const handleApplicationPress = (app) => {
-    setSelectedApplication(app);
-    setIsDetailModalVisible(true);
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadApplications(false);
   };
 
-  const handleRefresh = async () => {
-    // In real implementation, this would fetch from backend
-    await loadApplications();
-    Alert.alert(
-      language === 'hindi' ? 'ताज़ा किया गया' : 'Refreshed',
-      language === 'hindi'
-        ? 'आवेदन स्थिति अपडेट की गई'
-        : 'Application status updated'
-    );
+  const getStatusLabel = (statusKey, lang) => {
+    const opt = FILTER_OPTIONS.find((f) => f.key === statusKey);
+    if (opt) return lang === 'hindi' ? opt.labelHi : opt.labelEn;
+    return statusKey;
   };
+
+  const getProgressPercent = (status) => {
+    const idx = STATUS_STEPS.indexOf(status);
+    if (status === 'rejected') return 75;
+    if (status === 'completed') return 100;
+    if (idx < 0) return 10;
+    return Math.round(((idx + 1) / STATUS_STEPS.length) * 100);
+  };
+
+  // ─── Renders ───────────────────────────────────────────────────────────────
 
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity
-        style={styles.backButton}
+        style={styles.iconButton}
         onPress={() => navigation.goBack()}
-        activeOpacity={0.7}
       >
-        <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
       </TouchableOpacity>
-      <View style={styles.headerTextContainer}>
+      <View style={styles.headerCenter}>
         <Text style={styles.headerTitle}>
           {language === 'hindi' ? 'आवेदन ट्रैकिंग' : 'Track Applications'}
         </Text>
         <Text style={styles.headerSubtitle}>
-          {filteredApplications.length} {language === 'hindi' ? 'आवेदन' : 'applications'}
+          {filteredApplications.length}{' '}
+          {language === 'hindi' ? 'आवेदन' : 'applications'}
         </Text>
       </View>
       <TouchableOpacity
-        style={styles.refreshButton}
+        style={styles.iconButton}
         onPress={handleRefresh}
-        activeOpacity={0.7}
+        disabled={isRefreshing}
       >
-        <Ionicons name="refresh" size={24} color={colors.textPrimary} />
+        <Ionicons
+          name="refresh"
+          size={22}
+          color={isRefreshing ? colors.textDisabled : colors.textPrimary}
+        />
       </TouchableOpacity>
     </View>
   );
 
   const renderSearchBar = () => (
     <View style={styles.searchContainer}>
-      <Ionicons name="search" size={20} color={colors.textDisabled} style={styles.searchIcon} />
+      <Ionicons name="search" size={18} color={colors.textDisabled} />
       <TextInput
         style={styles.searchInput}
-        placeholder={language === 'hindi' ? 'संदर्भ संख्या से खोजें...' : 'Search by reference number...'}
+        placeholder={
+          language === 'hindi'
+            ? 'संदर्भ संख्या या नाम से खोजें...'
+            : 'Search by reference or name...'
+        }
         placeholderTextColor={colors.textDisabled}
         value={searchQuery}
         onChangeText={setSearchQuery}
         autoCapitalize="characters"
       />
       {searchQuery.length > 0 && (
-        <TouchableOpacity
-          onPress={() => setSearchQuery('')}
-          style={styles.clearButton}
-        >
-          <Ionicons name="close-circle" size={20} color={colors.textDisabled} />
+        <TouchableOpacity onPress={() => setSearchQuery('')}>
+          <Ionicons name="close-circle" size={18} color={colors.textDisabled} />
         </TouchableOpacity>
       )}
     </View>
@@ -241,283 +337,421 @@ export default function ApplicationTrackingScreen({ route, navigation }) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.filtersContainer}
+      style={styles.filtersScroll}
       contentContainerStyle={styles.filtersContent}
     >
-      {FILTER_OPTIONS.map((filter) => (
-        <TouchableOpacity
-          key={filter.key}
-          style={[
-            styles.filterChip,
-            selectedFilter === filter.key && styles.filterChipActive,
-          ]}
-          onPress={() => setSelectedFilter(filter.key)}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={filter.icon}
-            size={16}
-            color={selectedFilter === filter.key ? colors.white : colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.filterChipText,
-              selectedFilter === filter.key && styles.filterChipTextActive,
-            ]}
+      {FILTER_OPTIONS.map((f) => {
+        const count =
+          f.key === 'all'
+            ? applications.length
+            : applications.filter((a) => a.status === f.key).length;
+        const active = selectedFilter === f.key;
+        return (
+          <TouchableOpacity
+            key={f.key}
+            style={[styles.filterChip, active && styles.filterChipActive]}
+            onPress={() => setSelectedFilter(f.key)}
           >
-            {language === 'hindi' ? filter.labelHi : filter.labelEn}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Ionicons
+              name={f.icon}
+              size={14}
+              color={active ? colors.white : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.filterChipText,
+                active && styles.filterChipTextActive,
+              ]}
+            >
+              {language === 'hindi' ? f.labelHi : f.labelEn}
+            </Text>
+            {count > 0 && (
+              <View
+                style={[
+                  styles.filterBadge,
+                  active && styles.filterBadgeActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.filterBadgeText,
+                    active && styles.filterBadgeTextActive,
+                  ]}
+                >
+                  {count}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
     </ScrollView>
   );
 
-  const renderApplicationCard = (app) => (
-    <TouchableOpacity
-      key={app.id}
-      style={styles.applicationCard}
-      onPress={() => handleApplicationPress(app)}
-      activeOpacity={0.7}
-    >
-      {/* Status Badge */}
-      <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[app.status] }]}>
-        <Ionicons name={STATUS_ICONS[app.status]} size={16} color={colors.white} />
-        <Text style={styles.statusBadgeText}>
-          {language === 'hindi' 
-            ? FILTER_OPTIONS.find(f => f.key === app.status)?.labelHi
-            : FILTER_OPTIONS.find(f => f.key === app.status)?.labelEn}
-        </Text>
-      </View>
+  const renderApplicationCard = (app) => {
+    const statusColor = STATUS_COLORS[app.status] || '#757575';
+    const progress = getProgressPercent(app.status);
 
-      {/* Form Name */}
-      <Text style={styles.cardFormName} numberOfLines={2}>
-        {language === 'hindi' ? app.formNameHindi : app.formName}
-      </Text>
+    return (
+      <TouchableOpacity
+        key={app.id}
+        style={styles.card}
+        onPress={() => {
+          setSelectedApplication(app);
+          setIsDetailModalVisible(true);
+        }}
+        activeOpacity={0.75}
+      >
+        <View style={[styles.cardStrip, { backgroundColor: statusColor }]} />
+        <View style={styles.cardBody}>
+          <View style={styles.cardTopRow}>
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: statusColor + '20',
+                  borderColor: statusColor + '50',
+                },
+              ]}
+            >
+              <Ionicons
+                name={STATUS_ICONS[app.status] || 'document-outline'}
+                size={13}
+                color={statusColor}
+              />
+              <Text style={[styles.statusBadgeText, { color: statusColor }]}>
+                {getStatusLabel(app.status, language).toUpperCase()}
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textDisabled}
+            />
+          </View>
 
-      {/* Reference Number */}
-      <View style={styles.cardRow}>
-        <Ionicons name="barcode-outline" size={16} color={colors.textSecondary} />
-        <Text style={styles.cardReferenceNumber}>{app.referenceNumber}</Text>
-      </View>
+          <Text style={styles.cardName} numberOfLines={2}>
+            {language === 'hindi' ? app.formNameHindi : app.formName}
+          </Text>
 
-      {/* Date */}
-      <View style={styles.cardRow}>
-        <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-        <Text style={styles.cardDate}>
-          {language === 'hindi' ? 'जमा: ' : 'Submitted: '}{app.submittedDate}
-        </Text>
-      </View>
+          <View style={styles.cardMeta}>
+            <Ionicons
+              name="barcode-outline"
+              size={14}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.cardRef}>{app.referenceNumber}</Text>
+          </View>
 
-      {/* Last Updated */}
-      <View style={styles.cardRow}>
-        <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-        <Text style={styles.cardDate}>
-          {language === 'hindi' ? 'अपडेट: ' : 'Updated: '}{app.lastUpdated}
-        </Text>
-      </View>
+          <View style={styles.cardDatesRow}>
+            <View style={styles.cardMeta}>
+              <Ionicons
+                name="calendar-outline"
+                size={13}
+                color={colors.textDisabled}
+              />
+              <Text style={styles.cardDateText}>{app.submittedDate}</Text>
+            </View>
+            {app.estimatedCompletion && (
+              <View style={styles.etaBadge}>
+                <MaterialCommunityIcons
+                  name="clock-fast"
+                  size={12}
+                  color="#E65100"
+                />
+                <Text style={styles.etaText}>{app.estimatedCompletion}</Text>
+              </View>
+            )}
+          </View>
 
-      {/* Estimated Completion */}
-      {app.estimatedCompletion && (
-        <View style={styles.estimatedBadge}>
-          <MaterialCommunityIcons name="clock-fast" size={14} color="#FF9933" />
-          <Text style={styles.estimatedText}>
-            {language === 'hindi' ? 'अनुमानित: ' : 'Est: '}{app.estimatedCompletion}
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progress}%`, backgroundColor: statusColor },
+              ]}
+            />
+          </View>
+          <Text style={styles.progressLabel}>
+            {progress}%{' '}
+            {language === 'hindi' ? 'पूर्ण' : 'complete'}
           </Text>
         </View>
-      )}
+      </TouchableOpacity>
+    );
+  };
 
-      {/* Arrow */}
-      <View style={styles.cardArrow}>
-        <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} />
-      </View>
-    </TouchableOpacity>
+  const renderLoading = () => (
+    <View style={styles.centerState}>
+      <ActivityIndicator size="large" color={colors.black} />
+      <Text style={styles.centerStateText}>
+        {language === 'hindi'
+          ? 'आवेदन लोड हो रहे हैं...'
+          : 'Loading applications...'}
+      </Text>
+    </View>
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <MaterialCommunityIcons name="file-document-alert-outline" size={80} color={colors.textDisabled} />
-      <Text style={styles.emptyStateTitle}>
-        {language === 'hindi' ? 'कोई आवेदन नहीं मिला' : 'No Applications Found'}
+  const renderError = () => (
+    <View style={styles.centerState}>
+      <MaterialCommunityIcons
+        name="cloud-off-outline"
+        size={64}
+        color={colors.textDisabled}
+      />
+      <Text style={styles.centerStateTitle}>
+        {language === 'hindi' ? 'लोड करने में समस्या' : 'Failed to Load'}
       </Text>
-      <Text style={styles.emptyStateMessage}>
-        {language === 'hindi'
-          ? 'आपके द्वारा जमा किए गए आवेदन यहाँ दिखाई देंगे'
-          : 'Applications you submit will appear here'}
-      </Text>
+      <Text style={styles.centerStateText}>{error}</Text>
       <TouchableOpacity
-        style={styles.emptyStateButton}
-        onPress={() => navigation.navigate('FormSelection')}
-        activeOpacity={0.8}
+        style={styles.actionBtn}
+        onPress={() => loadApplications(true)}
       >
-        <Ionicons name="add-circle" size={20} color={colors.white} />
-        <Text style={styles.emptyStateButtonText}>
-          {language === 'hindi' ? 'नया फॉर्म भरें' : 'Fill New Form'}
+        <Ionicons name="refresh" size={18} color={colors.white} />
+        <Text style={styles.actionBtnText}>
+          {language === 'hindi' ? 'पुनः प्रयास करें' : 'Retry'}
         </Text>
       </TouchableOpacity>
     </View>
   );
 
+  const renderEmpty = () => (
+    <View style={styles.centerState}>
+      <MaterialCommunityIcons
+        name="file-document-alert-outline"
+        size={72}
+        color={colors.textDisabled}
+      />
+      <Text style={styles.centerStateTitle}>
+        {selectedFilter !== 'all' || searchQuery
+          ? language === 'hindi'
+            ? 'कोई परिणाम नहीं'
+            : 'No Results'
+          : language === 'hindi'
+          ? 'कोई आवेदन नहीं'
+          : 'No Applications Yet'}
+      </Text>
+      <Text style={styles.centerStateText}>
+        {selectedFilter !== 'all' || searchQuery
+          ? language === 'hindi'
+            ? 'अपना फ़िल्टर बदलें'
+            : 'Try a different filter or search term'
+          : language === 'hindi'
+          ? 'आपके जमा किए गए आवेदन यहाँ दिखेंगे'
+          : 'Applications you submit will appear here'}
+      </Text>
+      {selectedFilter === 'all' && !searchQuery && (
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => navigation.navigate('FormSelection')}
+        >
+          <Ionicons name="add-circle-outline" size={18} color={colors.white} />
+          <Text style={styles.actionBtnText}>
+            {language === 'hindi' ? 'नया फॉर्म भरें' : 'Fill New Form'}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   const renderDetailModal = () => {
     if (!selectedApplication) return null;
+    const app = selectedApplication;
+    const statusColor = STATUS_COLORS[app.status] || '#757575';
 
     return (
       <Modal
         visible={isDetailModalVisible}
         animationType="slide"
-        transparent={true}
+        transparent
         onRequestClose={() => setIsDetailModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Modal Header */}
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {language === 'hindi' ? 'आवेदन विवरण' : 'Application Details'}
               </Text>
               <TouchableOpacity
+                style={styles.iconButton}
                 onPress={() => setIsDetailModalVisible(false)}
-                style={styles.modalCloseButton}
               >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              {/* Status Card */}
-              <View style={[styles.detailStatusCard, { backgroundColor: STATUS_COLORS[selectedApplication.status] }]}>
-                <Ionicons name={STATUS_ICONS[selectedApplication.status]} size={48} color={colors.white} />
-                <Text style={styles.detailStatusText}>
-                  {language === 'hindi'
-                    ? FILTER_OPTIONS.find(f => f.key === selectedApplication.status)?.labelHi
-                    : FILTER_OPTIONS.find(f => f.key === selectedApplication.status)?.labelEn}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={styles.modalScroll}
+            >
+              {/* Status hero */}
+              <View
+                style={[styles.statusHero, { backgroundColor: statusColor }]}
+              >
+                <Ionicons
+                  name={STATUS_ICONS[app.status] || 'document-outline'}
+                  size={44}
+                  color={colors.white}
+                />
+                <Text style={styles.statusHeroText}>
+                  {getStatusLabel(app.status, language).toUpperCase()}
                 </Text>
+                <Text style={styles.statusHeroRef}>{app.referenceNumber}</Text>
               </View>
 
-              {/* Form Details */}
-              <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>
-                  {language === 'hindi' ? 'फॉर्म जानकारी' : 'Form Information'}
-                </Text>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>
-                    {language === 'hindi' ? 'फॉर्म का नाम:' : 'Form Name:'}
-                  </Text>
-                  <Text style={styles.detailValue}>
-                    {language === 'hindi' ? selectedApplication.formNameHindi : selectedApplication.formName}
-                  </Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>
-                    {language === 'hindi' ? 'संदर्भ संख्या:' : 'Reference Number:'}
-                  </Text>
-                  <Text style={[styles.detailValue, styles.detailValueBold]}>
-                    {selectedApplication.referenceNumber}
-                  </Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>
-                    {language === 'hindi' ? 'विभाग:' : 'Department:'}
-                  </Text>
-                  <Text style={styles.detailValue}>
-                    {language === 'hindi' ? selectedApplication.departmentHindi : selectedApplication.department}
-                  </Text>
-                </View>
+              {/* Info card */}
+              <View style={styles.infoCard}>
+                <InfoRow
+                  icon="document-text-outline"
+                  label={language === 'hindi' ? 'फॉर्म का नाम' : 'Form Name'}
+                  value={
+                    language === 'hindi' ? app.formNameHindi : app.formName
+                  }
+                />
+                <InfoRow
+                  icon="business-outline"
+                  label={language === 'hindi' ? 'विभाग' : 'Department'}
+                  value={
+                    language === 'hindi'
+                      ? app.departmentHindi
+                      : app.department
+                  }
+                />
+                <InfoRow
+                  icon="calendar-outline"
+                  label={language === 'hindi' ? 'जमा दिनांक' : 'Submitted'}
+                  value={app.submittedDate}
+                />
+                <InfoRow
+                  icon="time-outline"
+                  label={
+                    language === 'hindi' ? 'अंतिम अपडेट' : 'Last Updated'
+                  }
+                  value={app.lastUpdated}
+                  noBorder
+                />
               </View>
 
               {/* Timeline */}
-              <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>
-                  {language === 'hindi' ? 'प्रगति टाइमलाइन' : 'Progress Timeline'}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>
+                  {language === 'hindi'
+                    ? 'प्रगति टाइमलाइन'
+                    : 'Progress Timeline'}
                 </Text>
-                {selectedApplication.timeline.map((step, index) => (
-                  <View key={step.key} style={styles.timelineItem}>
-                    <View style={styles.timelineIconContainer}>
-                      <View style={[
-                        styles.timelineIcon,
-                        step.completed && styles.timelineIconCompleted,
-                        step.current && styles.timelineIconCurrent,
-                      ]}>
-                        {step.completed ? (
-                          <Ionicons name="checkmark" size={16} color={colors.white} />
-                        ) : (
-                          <View style={styles.timelineIconDot} />
+                {(app.timeline || generateTimeline(app.status)).map(
+                  (step, index, arr) => (
+                    <View key={step.key} style={styles.timelineRow}>
+                      <View style={styles.timelineLeft}>
+                        <View
+                          style={[
+                            styles.timelineDot,
+                            step.completed && {
+                              backgroundColor: '#4CAF50',
+                              borderColor: '#4CAF50',
+                            },
+                            step.current && {
+                              backgroundColor: statusColor,
+                              borderColor: statusColor,
+                            },
+                          ]}
+                        >
+                          {step.completed && (
+                            <Ionicons
+                              name="checkmark"
+                              size={12}
+                              color={colors.white}
+                            />
+                          )}
+                        </View>
+                        {index < arr.length - 1 && (
+                          <View
+                            style={[
+                              styles.timelineConnector,
+                              step.completed && {
+                                backgroundColor: '#4CAF50',
+                              },
+                            ]}
+                          />
                         )}
                       </View>
-                      {index < selectedApplication.timeline.length - 1 && (
-                        <View style={[
-                          styles.timelineLine,
-                          step.completed && styles.timelineLineCompleted,
-                        ]} />
-                      )}
+                      <View style={styles.timelineRight}>
+                        <Text
+                          style={[
+                            styles.timelineLabel,
+                            step.completed && styles.timelineLabelDone,
+                            step.current && {
+                              color: statusColor,
+                              fontFamily: typography.fontFamily.bold,
+                            },
+                          ]}
+                        >
+                          {language === 'hindi' ? step.labelHi : step.labelEn}
+                        </Text>
+                        {step.current && (
+                          <Text
+                            style={[
+                              styles.timelineSubLabel,
+                              { color: statusColor },
+                            ]}
+                          >
+                            {language === 'hindi'
+                              ? 'वर्तमान स्थिति'
+                              : 'Current stage'}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                    <View style={styles.timelineContent}>
-                      <Text style={[
-                        styles.timelineLabel,
-                        step.completed && styles.timelineLabelCompleted,
-                      ]}>
-                        {language === 'hindi' ? step.labelHi : step.labelEn}
-                      </Text>
-                      {step.date && (
-                        <Text style={styles.timelineDate}>{step.date}</Text>
-                      )}
-                    </View>
-                  </View>
-                ))}
-              </View>
-
-              {/* Dates */}
-              <View style={styles.detailSection}>
-                <Text style={styles.detailSectionTitle}>
-                  {language === 'hindi' ? 'महत्वपूर्ण तिथियां' : 'Important Dates'}
-                </Text>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>
-                    {language === 'hindi' ? 'जमा की तारीख:' : 'Submitted Date:'}
-                  </Text>
-                  <Text style={styles.detailValue}>{selectedApplication.submittedDate}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>
-                    {language === 'hindi' ? 'अंतिम अपडेट:' : 'Last Updated:'}
-                  </Text>
-                  <Text style={styles.detailValue}>{selectedApplication.lastUpdated}</Text>
-                </View>
-                {selectedApplication.estimatedCompletion && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>
-                      {language === 'hindi' ? 'अनुमानित पूर्णता:' : 'Estimated Completion:'}
-                    </Text>
-                    <Text style={styles.detailValue}>{selectedApplication.estimatedCompletion}</Text>
-                  </View>
+                  )
                 )}
               </View>
 
-              {/* Note */}
-              <View style={styles.noteCard}>
-                <Ionicons name="information-circle" size={20} color="#FF9933" />
-                <Text style={styles.noteText}>
+              {/* Notes */}
+              {app.estimatedCompletion && (
+                <View style={[styles.noteCard, { backgroundColor: '#FFF3E0' }]}>
+                  <MaterialCommunityIcons
+                    name="clock-fast"
+                    size={18}
+                    color="#E65100"
+                  />
+                  <Text style={[styles.noteText, { color: '#E65100' }]}>
+                    {language === 'hindi'
+                      ? `अनुमानित पूर्णता: ${app.estimatedCompletion}`
+                      : `Estimated completion: ${app.estimatedCompletion}`}
+                  </Text>
+                </View>
+              )}
+
+              <View style={[styles.noteCard, { backgroundColor: '#EBF5FB' }]}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color="#1565C0"
+                />
+                <Text style={[styles.noteText, { color: '#1565C0' }]}>
                   {language === 'hindi'
-                    ? 'अपडेट के लिए अपने पंजीकृत फोन नंबर और ईमेल की जांच करें।'
-                    : 'Check your registered phone number and email for updates.'}
+                    ? 'अपडेट के लिए अपने पंजीकृत मोबाइल और ईमेल की जाँच करते रहें।'
+                    : 'Check your registered mobile and email for status updates.'}
                 </Text>
               </View>
 
-              {/* Action Buttons */}
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.modalActionButton}
-                  onPress={() => {
-                    setIsDetailModalVisible(false);
-                    // TODO: Navigate to support/contact
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="help-circle-outline" size={20} color={colors.white} />
-                  <Text style={styles.modalActionButtonText}>
-                    {language === 'hindi' ? 'सहायता से संपर्क करें' : 'Contact Support'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => setIsDetailModalVisible(false)}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color={colors.white}
+                />
+                <Text style={styles.actionBtnText}>
+                  {language === 'hindi' ? 'ठीक है' : 'Got It'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={{ height: spacing.xxl }} />
             </ScrollView>
           </View>
         </View>
@@ -525,34 +759,53 @@ export default function ApplicationTrackingScreen({ route, navigation }) {
     );
   };
 
+  // ─── Main ─────────────────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeader()}
-      
-      <View style={styles.content}>
+
+      <View style={styles.body}>
         {renderSearchBar()}
         {renderFilters()}
 
-        <ScrollView
-          style={styles.listContainer}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredApplications.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            filteredApplications.map(renderApplicationCard)
-          )}
-        </ScrollView>
+        {isLoading ? (
+          renderLoading()
+        ) : error ? (
+          renderError()
+        ) : (
+          <ScrollView
+            style={styles.list}
+            contentContainerStyle={[
+              styles.listContent,
+              filteredApplications.length === 0 && styles.listContentEmpty,
+            ]}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.black}
+                colors={[colors.black]}
+              />
+            }
+          >
+            {filteredApplications.length === 0
+              ? renderEmpty()
+              : filteredApplications.map(renderApplicationCard)}
+          </ScrollView>
+        )}
       </View>
 
-      {/* Language Toggle */}
+      {/* Language toggle */}
       <TouchableOpacity
-        style={styles.languageToggle}
-        onPress={() => setLanguage(language === 'english' ? 'hindi' : 'english')}
+        style={styles.langToggle}
+        onPress={() =>
+          setLanguage((l) => (l === 'english' ? 'hindi' : 'english'))
+        }
       >
-        <Ionicons name="language" size={20} color={colors.white} />
-        <Text style={styles.languageToggleText}>
+        <Ionicons name="language" size={18} color={colors.white} />
+        <Text style={styles.langToggleText}>
           {language === 'english' ? 'हिंदी' : 'English'}
         </Text>
       </TouchableOpacity>
@@ -567,7 +820,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
+  body: {
     flex: 1,
   },
 
@@ -577,42 +830,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: colors.gray200,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.gray200,
   },
-  headerTextContainer: {
+  headerCenter: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginHorizontal: spacing.md,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: typography.fontFamily.bold,
     color: colors.textPrimary,
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: typography.fontFamily.regular,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
   },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.white,
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.gray200,
   },
 
@@ -622,29 +866,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     paddingHorizontal: spacing.md,
-    height: 48,
+    height: 44,
     backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 2,
+    borderRadius: 10,
+    borderWidth: 1,
     borderColor: colors.gray200,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
+    gap: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: typography.fontFamily.regular,
     color: colors.textPrimary,
-  },
-  clearButton: {
-    padding: spacing.xs,
+    paddingVertical: 0,
   },
 
   // Filters
-  filtersContainer: {
+  filtersScroll: {
     marginBottom: spacing.md,
   },
   filtersContent: {
@@ -655,144 +895,199 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: 7,
     borderRadius: 20,
     backgroundColor: colors.white,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.gray200,
-    gap: spacing.xs,
+    gap: 5,
   },
   filterChipActive: {
     backgroundColor: colors.black,
     borderColor: colors.black,
   },
   filterChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: typography.fontFamily.semiBold,
     color: colors.textSecondary,
   },
   filterChipTextActive: {
     color: colors.white,
   },
+  filterBadge: {
+    backgroundColor: colors.gray200,
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+  },
+  filterBadgeActive: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  filterBadgeText: {
+    fontSize: 10,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.textSecondary,
+  },
+  filterBadgeTextActive: {
+    color: colors.white,
+  },
 
   // List
-  listContainer: {
+  list: {
     flex: 1,
   },
   listContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: 90,
+    gap: spacing.md,
+  },
+  listContentEmpty: {
+    flex: 1,
   },
 
-  // Application Card
-  applicationCard: {
+  // Card
+  card: {
+    flexDirection: 'row',
     backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 2,
+    borderRadius: 14,
+    borderWidth: 1,
     borderColor: colors.gray200,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
+  },
+  cardStrip: {
+    width: 4,
+  },
+  cardBody: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 8,
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 4,
   },
   statusBadgeText: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: typography.fontFamily.bold,
-    color: colors.white,
-    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
-  cardFormName: {
-    fontSize: 17,
+  cardName: {
+    fontSize: 15,
     fontFamily: typography.fontFamily.bold,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    marginBottom: 6,
+    lineHeight: 21,
   },
-  cardRow: {
+  cardMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.xs,
-    gap: spacing.xs,
+    gap: 4,
+    marginBottom: 4,
   },
-  cardReferenceNumber: {
-    fontSize: 14,
+  cardRef: {
+    fontSize: 12,
     fontFamily: typography.fontFamily.semiBold,
     color: colors.textSecondary,
     letterSpacing: 0.5,
   },
-  cardDate: {
-    fontSize: 13,
-    fontFamily: typography.fontFamily.regular,
-    color: colors.textSecondary,
-  },
-  estimatedBadge: {
+  cardDatesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-    gap: spacing.xs,
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
-  estimatedText: {
+  cardDateText: {
     fontSize: 12,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textDisabled,
+  },
+  etaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    gap: 3,
+  },
+  etaText: {
+    fontSize: 11,
     fontFamily: typography.fontFamily.semiBold,
     color: '#E65100',
   },
-  cardArrow: {
-    position: 'absolute',
-    right: spacing.lg,
-    top: '50%',
-    marginTop: -10,
+  progressTrack: {
+    height: 4,
+    backgroundColor: colors.gray200,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 3,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  progressLabel: {
+    fontSize: 10,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textDisabled,
   },
 
-  // Empty State
-  emptyState: {
+  // Center states
+  centerState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing.xxl * 2,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
   },
-  emptyStateTitle: {
-    fontSize: 18,
+  centerStateTitle: {
+    fontSize: 17,
     fontFamily: typography.fontFamily.bold,
     color: colors.textPrimary,
     marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
   },
-  emptyStateMessage: {
-    fontSize: 14,
+  centerStateText: {
+    fontSize: 13,
     fontFamily: typography.fontFamily.regular,
     color: colors.textSecondary,
     textAlign: 'center',
+    lineHeight: 19,
     marginTop: spacing.sm,
-    marginHorizontal: spacing.xl,
   },
-  emptyStateButton: {
+  actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.black,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: 12,
+    borderRadius: 10,
     marginTop: spacing.xl,
+    marginHorizontal: spacing.lg,
     gap: spacing.sm,
+    justifyContent: 'center',
   },
-  emptyStateButtonText: {
-    fontSize: 15,
+  actionBtnText: {
+    fontSize: 14,
     fontFamily: typography.fontFamily.bold,
     color: colors.white,
   },
@@ -800,209 +1095,200 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
-  modalContent: {
+  modalSheet: {
     backgroundColor: colors.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    paddingBottom: spacing.xl,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    maxHeight: '92%',
+    paddingTop: spacing.sm,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.gray200,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: spacing.sm,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: 2,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
     borderBottomColor: colors.gray200,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: typography.fontFamily.bold,
     color: colors.textPrimary,
-  },
-  modalCloseButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.gray200,
   },
   modalScroll: {
     flex: 1,
   },
 
-  // Detail Status Card
-  detailStatusCard: {
+  // Status hero
+  statusHero: {
     margin: spacing.lg,
-    padding: spacing.xl,
     borderRadius: 16,
+    paddingVertical: spacing.xl,
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  detailStatusText: {
+  statusHeroText: {
     fontSize: 20,
     fontFamily: typography.fontFamily.bold,
     color: colors.white,
-    marginTop: spacing.sm,
-    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statusHeroRef: {
+    fontSize: 13,
+    fontFamily: typography.fontFamily.semiBold,
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 1,
   },
 
-  // Detail Section
-  detailSection: {
+  // Info card
+  infoCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.gray200,
-  },
-  detailSectionTitle: {
-    fontSize: 16,
-    fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
     marginBottom: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+    overflow: 'hidden',
   },
-  detailRow: {
-    marginBottom: spacing.sm,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  detailLabel: {
-    fontSize: 13,
+  infoRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray200,
+  },
+  infoRowIcon: {
+    marginRight: spacing.md,
+  },
+  infoRowContent: {
+    flex: 1,
+  },
+  infoRowLabel: {
+    fontSize: 11,
     fontFamily: typography.fontFamily.medium,
     color: colors.textSecondary,
     marginBottom: 2,
   },
-  detailValue: {
-    fontSize: 15,
-    fontFamily: typography.fontFamily.regular,
+  infoRowValue: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.semiBold,
     color: colors.textPrimary,
   },
-  detailValueBold: {
+
+  // Section card
+  sectionCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+    padding: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 14,
     fontFamily: typography.fontFamily.bold,
-    letterSpacing: 0.5,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
   },
 
   // Timeline
-  timelineItem: {
+  timelineRow: {
     flexDirection: 'row',
-    marginBottom: spacing.md,
   },
-  timelineIconContainer: {
+  timelineLeft: {
     alignItems: 'center',
     marginRight: spacing.md,
+    width: 24,
   },
-  timelineIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  timelineDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.gray200,
+    borderWidth: 2,
+    borderColor: colors.gray200,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  timelineIconCompleted: {
-    backgroundColor: '#4CAF50',
-  },
-  timelineIconCurrent: {
-    backgroundColor: '#FF9933',
-  },
-  timelineIconDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.textDisabled,
-  },
-  timelineLine: {
+  timelineConnector: {
     width: 2,
     flex: 1,
     backgroundColor: colors.gray200,
-    marginTop: 4,
+    minHeight: 20,
+    marginVertical: 2,
   },
-  timelineLineCompleted: {
-    backgroundColor: '#4CAF50',
-  },
-  timelineContent: {
+  timelineRight: {
     flex: 1,
-    paddingTop: 4,
+    paddingBottom: spacing.md,
+    paddingTop: 2,
   },
   timelineLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: typography.fontFamily.medium,
     color: colors.textSecondary,
   },
-  timelineLabelCompleted: {
+  timelineLabelDone: {
     color: colors.textPrimary,
     fontFamily: typography.fontFamily.semiBold,
   },
-  timelineDate: {
-    fontSize: 12,
+  timelineSubLabel: {
+    fontSize: 11,
     fontFamily: typography.fontFamily.regular,
-    color: colors.textDisabled,
     marginTop: 2,
   },
 
-  // Note Card
+  // Note card
   noteCard: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     padding: spacing.md,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 12,
+    borderRadius: 10,
     gap: spacing.sm,
   },
   noteText: {
     flex: 1,
     fontSize: 13,
-    fontFamily: typography.fontFamily.medium,
-    color: '#E65100',
+    fontFamily: typography.fontFamily.regular,
+    lineHeight: 18,
   },
 
-  // Modal Actions
-  modalActions: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  modalActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.black,
-    paddingVertical: spacing.lg,
-    borderRadius: 12,
-    gap: spacing.sm,
-  },
-  modalActionButtonText: {
-    fontSize: 17,
-    fontFamily: typography.fontFamily.bold,
-    color: colors.white,
-  },
-
-  // Language Toggle
-  languageToggle: {
+  // Language toggle
+  langToggle: {
     position: 'absolute',
     bottom: spacing.xl,
     right: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.black,
-    paddingVertical: spacing.sm,
+    paddingVertical: 8,
     paddingHorizontal: spacing.md,
     borderRadius: 20,
-    gap: spacing.xs,
+    gap: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  languageToggleText: {
+  langToggleText: {
     fontSize: 13,
     fontFamily: typography.fontFamily.semiBold,
     color: colors.white,
