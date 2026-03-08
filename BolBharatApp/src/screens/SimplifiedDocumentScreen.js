@@ -16,105 +16,15 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { useDocumentHistory } from '../context/DocumentHistoryContext';
 
-// Mock data - In production, this would come from AWS Textract + Bedrock
-const MOCK_DOCUMENT_DATA = {
-  title: 'Ration Card Application',
-  titleHindi: 'राशन कार्ड आवेदन',
-  documentType: 'Government Form',
-  extractedText: `APPLICATION FOR RATION CARD
-
-To,
-The Tahsildar,
-[District Name]
-
-Subject: Application for New Ration Card
-
-Sir/Madam,
-
-I, the undersigned, hereby apply for the issuance of a new ration card for my family. I request you to kindly issue the ration card in the name of the head of the family as mentioned below.
-
-Details of Head of Family:
-Name: ____________
-Father's/Husband's Name: ____________
-Address: ____________
-Mobile Number: ____________
-
-Family Members:
-1. Name: ____________ Relation: ____________ Age: ____
-2. Name: ____________ Relation: ____________ Age: ____
-3. Name: ____________ Relation: ____________ Age: ____
-
-Required Documents Enclosed:
-1. Address Proof
-2. Identity Proof (Aadhaar Card)
-3. Income Certificate
-4. Passport Size Photographs
-
-I hereby declare that the information provided above is true and correct to the best of my knowledge.
-
-Date: ____________
-Place: ____________
-Signature: ____________`,
-  simplifiedText: `This is an application form to get a new ration card for your family.
-
-What you need to do:
-1. Fill in your name and address
-2. List all family members (name, relationship, age)
-3. Attach these documents:
-   • Address proof (like electricity bill)
-   • Aadhaar card
-   • Income certificate
-   • Your photographs
-
-Submit this form to your local Tahsildar office. They will verify your documents and issue a ration card within 30 days.
-
-The ration card helps you buy essential items like rice, wheat, and sugar at lower prices from government shops.`,
-  simplifiedTextHindi: `यह आपके परिवार के लिए नया राशन कार्ड प्राप्त करने का आवेदन पत्र है।
-
-आपको क्या करना है:
-1. अपना नाम और पता भरें
-2. सभी परिवार के सदस्यों की सूची बनाएं (नाम, रिश्ता, उम्र)
-3. ये दस्तावेज़ संलग्न करें:
-   • पते का प्रमाण (जैसे बिजली बिल)
-   • आधार कार्ड
-   • आय प्रमाण पत्र
-   • आपकी फोटो
-
-इस फॉर्म को अपने स्थानीय तहसीलदार कार्यालय में जमा करें। वे आपके दस्तावेज़ों की जांच करेंगे और 30 दिनों के भीतर राशन कार्ड जारी करेंगे।
-
-राशन कार्ड आपको सरकारी दुकानों से चावल, गेहूं और चीनी जैसी आवश्यक वस्तुओं को कम कीमत पर खरीदने में मदद करता है।`,
-  keyPoints: [
-    {
-      title: 'Who can apply?',
-      content: 'Any head of household without an existing ration card',
-      icon: 'person',
-    },
-    {
-      title: 'Processing time',
-      content: '30 days from submission',
-      icon: 'time',
-    },
-    {
-      title: 'Cost',
-      content: 'No fee required',
-      icon: 'cash',
-    },
-    {
-      title: 'Where to submit',
-      content: 'Local Tahsildar office',
-      icon: 'location',
-    },
-  ],
-};
-
 export default function SimplifiedDocumentScreen({ route, navigation }) {
-  const { imageUri, originalUri, documentId } = route.params || {};
+  const { imageUri, originalUri, documentId, documentData } = route.params || {};
   
   const [activeTab, setActiveTab] = useState('simplified'); // 'original', 'simplified'
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savedDocumentId, setSavedDocumentId] = useState(documentId || null);
   const [language, setLanguage] = useState('english'); // 'english', 'hindi'
+  const [document, setDocument] = useState(documentData || null);
 
   const { addDocument, updateDocument, getDocument } = useDocumentHistory();
   const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
@@ -194,13 +104,13 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
         const docId = await addDocument({
           imageUri,
           originalUri,
-          title: MOCK_DOCUMENT_DATA.title,
-          titleHindi: MOCK_DOCUMENT_DATA.titleHindi,
-          documentType: MOCK_DOCUMENT_DATA.documentType,
-          extractedText: MOCK_DOCUMENT_DATA.extractedText,
-          simplifiedText: MOCK_DOCUMENT_DATA.simplifiedText,
-          simplifiedTextHindi: MOCK_DOCUMENT_DATA.simplifiedTextHindi,
-          keyPoints: MOCK_DOCUMENT_DATA.keyPoints,
+          title: document?.title || 'Document',
+          titleHindi: document?.titleHindi || 'दस्तावेज़',
+          documentType: document?.documentType || 'Unknown',
+          extractedText: document?.extractedText || '',
+          simplifiedText: document?.simplifiedText || '',
+          simplifiedTextHindi: document?.simplifiedTextHindi || '',
+          keyPoints: document?.keyPoints || [],
         });
         setIsSaved(true);
         setSavedDocumentId(docId);
@@ -230,7 +140,7 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
           <Text style={styles.textCardTitle}>Extracted Text</Text>
         </View>
         <ScrollView style={styles.extractedTextScroll} nestedScrollEnabled>
-          <Text style={styles.extractedText}>{MOCK_DOCUMENT_DATA.extractedText}</Text>
+          <Text style={styles.extractedText}>{document?.extractedText || 'No text extracted'}</Text>
         </ScrollView>
       </View>
     </Animated.View>
@@ -238,8 +148,8 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
 
   const renderSimplifiedTab = () => {
     const currentText = language === 'hindi' 
-      ? MOCK_DOCUMENT_DATA.simplifiedTextHindi 
-      : MOCK_DOCUMENT_DATA.simplifiedText;
+      ? (document?.simplifiedTextHindi || 'No simplified text available')
+      : (document?.simplifiedText || 'No simplified text available');
 
     return (
       <Animated.View style={[styles.tabContent, { opacity: fadeAnim }]}>
@@ -255,9 +165,9 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
             </View>
             <View style={styles.documentTitleContainer}>
               <Text style={styles.documentTitle}>
-                {language === 'hindi' ? MOCK_DOCUMENT_DATA.titleHindi : MOCK_DOCUMENT_DATA.title}
+                {language === 'hindi' ? (document?.titleHindi || 'दस्तावेज़') : (document?.title || 'Document')}
               </Text>
-              <Text style={styles.documentType}>{MOCK_DOCUMENT_DATA.documentType}</Text>
+              <Text style={styles.documentType}>{document?.documentType || 'Unknown'}</Text>
             </View>
           </View>
 
@@ -337,7 +247,7 @@ export default function SimplifiedDocumentScreen({ route, navigation }) {
         <View style={styles.keyPointsSection}>
           <Text style={styles.sectionTitle}>Key Information</Text>
           <View style={styles.keyPointsGrid}>
-            {MOCK_DOCUMENT_DATA.keyPoints.map((point, index) => (
+            {(document?.keyPoints || []).map((point, index) => (
               <View key={index} style={styles.keyPointCard}>
                 <View style={styles.keyPointIconContainer}>
                   <Ionicons name={point.icon} size={20} color={colors.black} />

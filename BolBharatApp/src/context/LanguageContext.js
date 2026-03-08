@@ -10,70 +10,60 @@ export const LANGUAGES = [
     name: 'English',
     nativeName: 'English',
     code: 'en-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'hi',
     name: 'Hindi',
     nativeName: 'हिन्दी',
     code: 'hi-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'ta',
     name: 'Tamil',
     nativeName: 'தமிழ்',
     code: 'ta-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'te',
     name: 'Telugu',
     nativeName: 'తెలుగు',
     code: 'te-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'kn',
     name: 'Kannada',
     nativeName: 'ಕನ್ನಡ',
     code: 'kn-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'ml',
     name: 'Malayalam',
     nativeName: 'മലയാളം',
     code: 'ml-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'mr',
     name: 'Marathi',
     nativeName: 'मराठी',
     code: 'mr-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'gu',
     name: 'Gujarati',
     nativeName: 'ગુજરાતી',
     code: 'gu-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'bn',
     name: 'Bengali',
     nativeName: 'বাংলা',
     code: 'bn-IN',
-    flag: '🇮🇳',
   },
   {
     id: 'pa',
     name: 'Punjabi',
     nativeName: 'ਪੰਜਾਬੀ',
     code: 'pa-IN',
-    flag: '🇮🇳',
   },
 ];
 
@@ -81,6 +71,7 @@ const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
   const [currentLanguage, setCurrentLanguage] = useState(LANGUAGES[0]); // Default to English
+  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -94,6 +85,7 @@ export function LanguageProvider({ children }) {
         const language = LANGUAGES.find(lang => lang.id === savedLanguageId);
         if (language) {
           setCurrentLanguage(language);
+          setHasSelectedLanguage(true);
         }
       }
     } catch (error) {
@@ -109,6 +101,7 @@ export function LanguageProvider({ children }) {
       if (language) {
         setCurrentLanguage(language);
         await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, languageId);
+        setHasSelectedLanguage(true);
         return true;
       }
       return false;
@@ -127,6 +120,7 @@ export function LanguageProvider({ children }) {
     changeLanguage,
     getLanguageById,
     languages: LANGUAGES,
+    hasSelectedLanguage,
     isLoading,
   };
 

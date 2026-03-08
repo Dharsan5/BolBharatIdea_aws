@@ -13,157 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import theme from '../theme';
 
-// Mock application data - TODO: Replace with actual API call
-const MOCK_APPLICATION = {
-  id: 'APP_2024_001234',
-  schemeId: 'scheme_001',
-  schemeName: 'PM Kisan Samman Nidhi',
-  schemeNameHindi: 'प्रधानमंत्री किसान सम्मान निधि',
-  applicantName: 'राज कुमार',
-  applicationDate: '2024-02-15',
-  lastUpdated: '2024-03-01',
-  currentStatus: 'under_review',
-  estimatedCompletion: '2024-03-20',
-  category: 'Agriculture',
-  categoryHindi: 'कृषि',
-  
-  // Timeline of status changes
-  statusHistory: [
-    {
-      id: 1,
-      status: 'draft',
-      statusLabel: 'Draft',
-      statusLabelHindi: 'प्रारूप',
-      timestamp: '2024-02-14T10:30:00',
-      message: 'Application created',
-      messageHindi: 'आवेदन बनाया गया',
-      completed: true,
-    },
-    {
-      id: 2,
-      status: 'submitted',
-      statusLabel: 'Submitted',
-      statusLabelHindi: 'जमा किया',
-      timestamp: '2024-02-15T14:20:00',
-      message: 'Application submitted successfully',
-      messageHindi: 'आवेदन सफलतापूर्वक जमा किया गया',
-      officer: 'Block Development Officer',
-      completed: true,
-    },
-    {
-      id: 3,
-      status: 'processing',
-      statusLabel: 'Processing',
-      statusLabelHindi: 'प्रक्रिया में',
-      timestamp: '2024-02-18T09:15:00',
-      message: 'Initial verification completed',
-      messageHindi: 'प्रारंभिक सत्यापन पूर्ण',
-      officer: 'District Agriculture Officer',
-      completed: true,
-    },
-    {
-      id: 4,
-      status: 'under_review',
-      statusLabel: 'Under Review',
-      statusLabelHindi: 'समीक्षा में',
-      timestamp: '2024-03-01T11:00:00',
-      message: 'Documents under review by department',
-      messageHindi: 'विभाग द्वारा दस्तावेजों की समीक्षा',
-      officer: 'State Agriculture Department',
-      completed: true,
-    },
-    {
-      id: 5,
-      status: 'approved',
-      statusLabel: 'Approved',
-      statusLabelHindi: 'स्वीकृत',
-      timestamp: null,
-      message: 'Pending approval',
-      messageHindi: 'स्वीकृति लंबित',
-      completed: false,
-    },
-    {
-      id: 6,
-      status: 'completed',
-      statusLabel: 'Completed',
-      statusLabelHindi: 'पूर्ण',
-      timestamp: null,
-      message: 'Benefit disbursement',
-      messageHindi: 'लाभ वितरण',
-      completed: false,
-    },
-  ],
-  
-  // Documents checklist
-  documents: [
-    {
-      id: 1,
-      name: 'Aadhaar Card',
-      nameHindi: 'आधार कार्ड',
-      status: 'verified',
-      icon: 'checkmark-circle',
-      color: theme.colors.success,
-    },
-    {
-      id: 2,
-      name: 'Land Ownership Document',
-      nameHindi: 'भूमि स्वामित्व दस्तावेज़',
-      status: 'verified',
-      icon: 'checkmark-circle',
-      color: theme.colors.success,
-    },
-    {
-      id: 3,
-      name: 'Bank Account Details',
-      nameHindi: 'बैंक खाता विवरण',
-      status: 'verified',
-      icon: 'checkmark-circle',
-      color: theme.colors.success,
-    },
-    {
-      id: 4,
-      name: 'Income Certificate',
-      nameHindi: 'आय प्रमाण पत्र',
-      status: 'pending',
-      icon: 'time-outline',
-      color: theme.colors.warning,
-      note: 'Additional verification required',
-      noteHindi: 'अतिरिक्त सत्यापन आवश्यक',
-    },
-  ],
-  
-  // Recent updates/notifications
-  updates: [
-    {
-      id: 1,
-      title: 'Application Under Review',
-      titleHindi: 'आवेदन समीक्षा में',
-      message: 'Your application is currently being reviewed by the State Agriculture Department. You will be notified once the review is complete.',
-      messageHindi: 'आपके आवेदन की वर्तमान में राज्य कृषि विभाग द्वारा समीक्षा की जा रही है। समीक्षा पूर्ण होने पर आपको सूचित किया जाएगा।',
-      timestamp: '2024-03-01T11:00:00',
-      type: 'info',
-    },
-    {
-      id: 2,
-      title: 'Income Certificate Needs Verification',
-      titleHindi: 'आय प्रमाण पत्र के लिए सत्यापन आवश्यक',
-      message: 'Your income certificate requires additional verification. Please contact the Block Development Office.',
-      messageHindi: 'आपके आय प्रमाण पत्र के लिए अतिरिक्त सत्यापन की आवश्यकता है। कृपया ब्लॉक विकास कार्यालय से संपर्क करें।',
-      timestamp: '2024-02-28T15:30:00',
-      type: 'warning',
-    },
-    {
-      id: 3,
-      title: 'Initial Verification Complete',
-      titleHindi: 'प्रारंभिक सत्यापन पूर्ण',
-      message: 'Initial verification of your application has been completed successfully.',
-      messageHindi: 'आपके आवेदन का प्रारंभिक सत्यापन सफलतापूर्वक पूर्ण हो गया है।',
-      timestamp: '2024-02-18T09:15:00',
-      type: 'success',
-    },
-  ],
-};
-
 const STATUS_CONFIG = {
   draft: {
     color: theme.colors.textSecondary,
@@ -205,19 +54,26 @@ const STATUS_CONFIG = {
 export default function ApplicationStatusTrackingScreen({ route, navigation }) {
   const { applicationId } = route.params || {};
   const [refreshing, setRefreshing] = useState(false);
-  const [application, setApplication] = useState(MOCK_APPLICATION);
+  const [application, setApplication] = useState(null);
 
-  // TODO: Fetch application details from API
+  useEffect(() => {
+    if (applicationId) {
+      fetchApplicationDetails();
+    }
+  }, [applicationId]);
+
   const fetchApplicationDetails = async () => {
     setRefreshing(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // const response = await fetch(`/api/applications/${applicationId}`);
-      // const data = await response.json();
-      // setApplication(data);
+      const response = await fetch(`${process.env.API_URL}/applications/${applicationId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch application');
+      }
+      const data = await response.json();
+      setApplication(data);
     } catch (error) {
       console.error('Error fetching application:', error);
+      Alert.alert('Error', 'Failed to load application details. Please try again.');
     } finally {
       setRefreshing(false);
     }

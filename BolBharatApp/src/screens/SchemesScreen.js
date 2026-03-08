@@ -14,56 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { useSavedSchemes } from '../context/SavedSchemesContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchSchemes } from '../store/slices/schemesSlice';
 
 const { width } = Dimensions.get('window');
-
-const MOCK_SCHEMES = [
-  {
-    id: '1',
-    name: 'Pradhan Mantri Fasal Bima Yojana',
-    nameHindi: 'प्रधानमंत्री फसल बीमा योजना',
-    category: 'Agriculture',
-    description: 'Crop insurance scheme for farmers against crop loss',
-    relevance: 95,
-    benefits: '₹2 Lakh coverage per farmer',
-  },
-  {
-    id: '2',
-    name: 'PM Kisan Samman Nidhi',
-    nameHindi: 'पीएम किसान सम्मान निधि',
-    category: 'Agriculture',
-    description: 'Direct income support of ₹6,000 per year to farmers',
-    relevance: 92,
-    benefits: '₹2,000 per installment, 3 times a year',
-  },
-  {
-    id: '3',
-    name: 'Ayushman Bharat',
-    nameHindi: 'आयुष्मान भारत',
-    category: 'Healthcare',
-    description: 'Health insurance scheme providing free treatment',
-    relevance: 88,
-    benefits: '₹5 Lakh annual health coverage',
-  },
-  {
-    id: '4',
-    name: 'PM Awas Yojana',
-    nameHindi: 'पीएम आवास योजना',
-    category: 'Housing',
-    description: 'Affordable housing scheme for economically weaker sections',
-    relevance: 85,
-    benefits: '₹2.5 Lakh subsidy on home loans',
-  },
-  {
-    id: '5',
-    name: 'Pradhan Mantri Mudra Yojana',
-    nameHindi: 'प्रधानमंत्री मुद्रा योजना',
-    category: 'Finance',
-    description: 'Micro-loans for small businesses and entrepreneurs',
-    relevance: 82,
-    benefits: 'Loans up to ₹10 Lakh',
-  },
-];
 
 const QUICK_SEARCH_CATEGORIES = [
   { id: 'agriculture', label: 'Agriculture', iconFamily: MaterialCommunityIcons, iconName: 'leaf' },
@@ -75,17 +29,31 @@ const QUICK_SEARCH_CATEGORIES = [
 ];
 
 export default function SchemesScreen({ navigation }) {
+  const dispatch = useDispatch();
+  const reduxSchemes = useSelector(state => state.schemes.schemes);
+  const schemesLoading = useSelector(state => state.schemes.loading);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [schemes, setSchemes] = useState(MOCK_SCHEMES);
+  const [schemes, setSchemes] = useState([]);
   
   const { getSavedSchemesCount } = useSavedSchemes();
   const savedCount = getSavedSchemesCount();
   
   const voiceButtonScale = useRef(new Animated.Value(1)).current;
   const searchBarFade = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    dispatch(fetchSchemes({ query: '', category: 'all' }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (reduxSchemes && reduxSchemes.length > 0) {
+      setSchemes(reduxSchemes);
+    }
+  }, [reduxSchemes]);
 
   useEffect(() => {
     if (isVoiceMode) {
@@ -149,7 +117,7 @@ export default function SchemesScreen({ navigation }) {
   const handleClearSearch = () => {
     setSearchQuery('');
     setSelectedCategory(null);
-    setSchemes(MOCK_SCHEMES);
+    dispatch(fetchSchemes({ query: '', category: 'all' }));
   };
 
   const handleViewDetails = (schemeId) => {

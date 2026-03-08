@@ -82,11 +82,11 @@ export const validateOTP = (otp) => {
  * Country codes for phone authentication
  */
 export const COUNTRY_CODES = [
-  { code: '+91', country: 'India', flag: '🇮🇳' },
-  { code: '+1', country: 'USA', flag: '🇺🇸' },
-  { code: '+44', country: 'UK', flag: '🇬🇧' },
-  { code: '+86', country: 'China', flag: '🇨🇳' },
-  { code: '+81', country: 'Japan', flag: '🇯🇵' },
+  { code: '+91', country: 'India' },
+  { code: '+1', country: 'USA' },
+  { code: '+44', country: 'UK' },
+  { code: '+86', country: 'China' },
+  { code: '+81', country: 'Japan' },
 ];
 
 /**

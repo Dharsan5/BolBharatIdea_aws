@@ -17,6 +17,7 @@ import { colors, spacing, typography } from '../theme';
 import { saveUser } from '../api/database';
 
 const { width, height } = Dimensions.get('window');
+const ONBOARDING_COMPLETE_KEY = '@bolbharat_onboarding_complete';
 
 const STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -144,6 +145,7 @@ export default function UserProfileSetupScreen({ navigation }) {
         familyMembers: formData.familySize,
         lastUpdated: new Date().toISOString(),
       }));
+      await AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
 
       // Save to cloud database
       const userId = formData.name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
@@ -166,6 +168,9 @@ export default function UserProfileSetupScreen({ navigation }) {
   };
 
   const handleSkip = () => {
+    AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true').catch((error) => {
+      console.warn('Error saving onboarding status:', error);
+    });
     navigation.replace('Main');
   };
 

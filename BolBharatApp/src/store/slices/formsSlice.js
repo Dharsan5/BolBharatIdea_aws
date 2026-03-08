@@ -7,22 +7,15 @@ export const submitForm = createAsyncThunk(
   'forms/submitForm',
   async ({ formId, formData }, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${API_URL}/forms/submit`, {
-      //   method: 'POST',
-      //   body: JSON.stringify({ formId, formData }),
-      // });
-      // return await response.json();
-      
-      // Mock data for now
-      return {
-        id: Date.now().toString(),
-        formId,
-        formData,
-        status: 'submitted',
-        submittedAt: new Date().toISOString(),
-        applicationNumber: `APP${Date.now()}`,
-      };
+      const response = await fetch(`${process.env.API_URL}/forms/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId, formData }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to submit form');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }

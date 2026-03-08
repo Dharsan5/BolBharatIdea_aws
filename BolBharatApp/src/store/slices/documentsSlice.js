@@ -6,22 +6,15 @@ export const processDocument = createAsyncThunk(
   'documents/processDocument',
   async ({ imageUri, documentType }, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call to AWS Textract + Bedrock
-      // const response = await fetch(`${API_URL}/documents/process`, {
-      //   method: 'POST',
-      //   body: JSON.stringify({ imageUri, documentType }),
-      // });
-      // return await response.json();
-      
-      // Mock data for now
-      return {
-        id: Date.now().toString(),
-        imageUri,
-        documentType,
-        extractedText: 'Sample extracted text...',
-        simplifiedText: 'Simplified version...',
-        processedAt: new Date().toISOString(),
-      };
+      const response = await fetch(`${process.env.API_URL}/documents/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUri, documentType }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to process document');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -32,8 +25,11 @@ export const fetchDocumentHistory = createAsyncThunk(
   'documents/fetchHistory',
   async (_, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      return [];
+      const response = await fetch(`${process.env.API_URL}/documents/history`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch document history');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }

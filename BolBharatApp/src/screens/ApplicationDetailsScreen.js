@@ -14,196 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import theme from '../theme';
 
-// Mock application data - TODO: Replace with actual API call
-const MOCK_APPLICATION_DETAILS = {
-  id: 'APP_2024_001234',
-  applicationNumber: 'APP_2024_001234',
-  schemeId: 'scheme_001',
-  schemeName: 'PM Kisan Samman Nidhi',
-  schemeNameHindi: 'प्रधानमंत्री किसान सम्मान निधि',
-  category: 'Agriculture',
-  categoryHindi: 'कृषि',
-  status: 'under_review',
-  statusLabel: 'Under Review',
-  statusLabelHindi: 'समीक्षा में',
-  
-  // Dates
-  submittedDate: '2024-02-15T14:20:00',
-  lastUpdated: '2024-03-01T11:00:00',
-  estimatedCompletion: '2024-03-20',
-  
-  // Applicant Information
-  applicantInfo: {
-    title: 'Applicant Information',
-    titleHindi: 'आवेदक की जानकारी',
-    fields: [
-      { label: 'Full Name', labelHindi: 'पूरा नाम', value: 'राज कुमार' },
-      { label: 'Father\'s Name', labelHindi: 'पिता का नाम', value: 'श्री राम कुमार' },
-      { label: 'Date of Birth', labelHindi: 'जन्म तिथि', value: '15/08/1985' },
-      { label: 'Age', labelHindi: 'आयु', value: '38 years' },
-      { label: 'Gender', labelHindi: 'लिंग', value: 'Male / पुरुष' },
-      { label: 'Mobile Number', labelHindi: 'मोबाइल नंबर', value: '+91 98765 43210' },
-      { label: 'Email', labelHindi: 'ईमेल', value: 'raj.kumar@example.com' },
-      { label: 'Aadhaar Number', labelHindi: 'आधार नंबर', value: 'XXXX XXXX 5678' },
-    ],
-  },
-  
-  // Address Information
-  addressInfo: {
-    title: 'Address Details',
-    titleHindi: 'पता विवरण',
-    fields: [
-      { label: 'Village/Town', labelHindi: 'गांव/शहर', value: 'Rampur' },
-      { label: 'Post Office', labelHindi: 'डाकघर', value: 'Rampur' },
-      { label: 'Block', labelHindi: 'ब्लॉक', value: 'Rampur' },
-      { label: 'District', labelHindi: 'जिला', value: 'Sitapur' },
-      { label: 'State', labelHindi: 'राज्य', value: 'Uttar Pradesh / उत्तर प्रदेश' },
-      { label: 'PIN Code', labelHindi: 'पिन कोड', value: '261001' },
-    ],
-  },
-  
-  // Land Details (scheme-specific)
-  landDetails: {
-    title: 'Land Details',
-    titleHindi: 'भूमि विवरण',
-    fields: [
-      { label: 'Total Land', labelHindi: 'कुल भूमि', value: '2.5 Hectares' },
-      { label: 'Cultivable Land', labelHindi: 'खेती योग्य भूमि', value: '2.0 Hectares' },
-      { label: 'Khasra Number', labelHindi: 'खसरा नंबर', value: '123/2, 124/1' },
-      { label: 'Land Ownership', labelHindi: 'भूमि स्वामित्व', value: 'Self-Owned / स्वयं का' },
-      { label: 'Crops Grown', labelHindi: 'उगाई गई फसलें', value: 'Wheat, Rice, Sugarcane' },
-    ],
-  },
-  
-  // Bank Details
-  bankDetails: {
-    title: 'Bank Account Details',
-    titleHindi: 'बैंक खाता विवरण',
-    fields: [
-      { label: 'Bank Name', labelHindi: 'बैंक का नाम', value: 'State Bank of India' },
-      { label: 'Branch', labelHindi: 'शाखा', value: 'Sitapur Main Branch' },
-      { label: 'Account Number', labelHindi: 'खाता संख्या', value: 'XXXX XXXX 1234' },
-      { label: 'IFSC Code', labelHindi: 'IFSC कोड', value: 'SBIN0001234' },
-      { label: 'Account Type', labelHindi: 'खाता प्रकार', value: 'Savings / बचत' },
-      { label: 'Account Holder', labelHindi: 'खाताधारक', value: 'राज कुमार' },
-    ],
-  },
-  
-  // Additional Information
-  additionalInfo: {
-    title: 'Additional Information',
-    titleHindi: 'अतिरिक्त जानकारी',
-    fields: [
-      { label: 'Category', labelHindi: 'श्रेणी', value: 'General' },
-      { label: 'Annual Income', labelHindi: 'वार्षिक आय', value: '₹1,50,000' },
-      { label: 'BPL Card', labelHindi: 'BPL कार्ड', value: 'No / नहीं' },
-      { label: 'Previous Beneficiary', labelHindi: 'पिछला लाभार्थी', value: 'No / नहीं' },
-    ],
-  },
-  
-  // Documents
-  documents: [
-    {
-      id: 1,
-      name: 'Aadhaar Card',
-      nameHindi: 'आधार कार्ड',
-      type: 'Identity Proof',
-      typeHindi: 'पहचान प्रमाण',
-      status: 'verified',
-      uploadDate: '2024-02-15',
-      fileSize: '245 KB',
-      icon: 'card-outline',
-    },
-    {
-      id: 2,
-      name: 'Land Ownership Certificate',
-      nameHindi: 'भूमि स्वामित्व प्रमाणपत्र',
-      type: 'Property Document',
-      typeHindi: 'संपत्ति दस्तावेज़',
-      status: 'verified',
-      uploadDate: '2024-02-15',
-      fileSize: '1.2 MB',
-      icon: 'document-text-outline',
-    },
-    {
-      id: 3,
-      name: 'Bank Passbook',
-      nameHindi: 'बैंक पासबुक',
-      type: 'Bank Proof',
-      typeHindi: 'बैंक प्रमाण',
-      status: 'verified',
-      uploadDate: '2024-02-15',
-      fileSize: '380 KB',
-      icon: 'wallet-outline',
-    },
-    {
-      id: 4,
-      name: 'Income Certificate',
-      nameHindi: 'आय प्रमाण पत्र',
-      type: 'Income Proof',
-      typeHindi: 'आय प्रमाण',
-      status: 'pending',
-      uploadDate: '2024-02-15',
-      fileSize: '425 KB',
-      icon: 'document-outline',
-      note: 'Verification pending',
-      noteHindi: 'सत्यापन लंबित',
-    },
-    {
-      id: 5,
-      name: 'Passport Size Photo',
-      nameHindi: 'पासपोर्ट साइज़ फ़ोटो',
-      type: 'Photograph',
-      typeHindi: 'फोटोग्राफ',
-      status: 'verified',
-      uploadDate: '2024-02-15',
-      fileSize: '156 KB',
-      icon: 'image-outline',
-    },
-  ],
-  
-  // Processing Info
-  processingInfo: {
-    title: 'Processing Information',
-    titleHindi: 'प्रसंस्करण जानकारी',
-    fields: [
-      { label: 'Reference Number', labelHindi: 'संदर्भ संख्या', value: 'REF202400123456' },
-      { label: 'Processing Office', labelHindi: 'प्रसंस्करण कार्यालय', value: 'District Agriculture Office, Sitapur' },
-      { label: 'Assigned Officer', labelHindi: 'नियुक्त अधिकारी', value: 'श्री अमित वर्मा' },
-      { label: 'Officer Contact', labelHindi: 'अधिकारी संपर्क', value: '0522-XXXXXXX' },
-      { label: 'Processing Days', labelHindi: 'प्रसंस्करण दिन', value: '15 days' },
-    ],
-  },
-  
-  // Scheme Benefits
-  schemeBenefits: {
-    title: 'Scheme Benefits',
-    titleHindi: 'योजना लाभ',
-    points: [
-      {
-        text: 'Financial assistance of ₹6,000 per year',
-        textHindi: '₹6,000 प्रति वर्ष का वित्तीय सहायता',
-      },
-      {
-        text: 'Amount transferred in three equal installments',
-        textHindi: 'तीन समान किस्तों में राशि हस्तांतरित',
-      },
-      {
-        text: 'Direct Benefit Transfer (DBT) to bank account',
-        textHindi: 'बैंक खाते में प्रत्यक्ष लाभ अंतरण (DBT)',
-      },
-      {
-        text: 'No middleman, direct government support',
-        textHindi: 'कोई बिचौलिया नहीं, सीधा सरकारी समर्थन',
-      },
-    ],
-  },
-  
-  // Remarks
-  remarks: 'All documents have been submitted and verified. Application is currently under review by the State Agriculture Department. Expected approval within 15 working days.',
-  remarksHindi: 'सभी दस्तावेज़ जमा और सत्यापित किए गए हैं। आवेदन वर्तमान में राज्य कृषि विभाग द्वारा समीक्षा के अधीन है। 15 कार्य दिवसों के भीतर स्वीकृति की उम्मीद है।',
-};
-
 const STATUS_CONFIG = {
   draft: { color: theme.colors.textSecondary, bgColor: '#f5f5f5', icon: 'document-outline' },
   submitted: { color: theme.colors.info, bgColor: '#E3F2FD', icon: 'checkmark-done-outline' },
@@ -223,7 +33,7 @@ const DOCUMENT_STATUS = {
 export default function ApplicationDetailsScreen({ route, navigation }) {
   const { applicationId } = route.params || {};
   const [refreshing, setRefreshing] = useState(false);
-  const [application, setApplication] = useState(MOCK_APPLICATION_DETAILS);
+  const [application, setApplication] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     applicantInfo: true,
     addressInfo: true,
@@ -235,16 +45,24 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
     schemeBenefits: false,
   });
 
-  // TODO: Fetch application details from API
+  useEffect(() => {
+    if (applicationId) {
+      fetchApplicationDetails();
+    }
+  }, [applicationId]);
+
   const fetchApplicationDetails = async () => {
     setRefreshing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // const response = await fetch(`/api/applications/${applicationId}/details`);
-      // const data = await response.json();
-      // setApplication(data);
+      const response = await fetch(`${process.env.API_URL}/applications/${applicationId}/details`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch application details');
+      }
+      const data = await response.json();
+      setApplication(data);
     } catch (error) {
       console.error('Error fetching application:', error);
+      Alert.alert('Error', 'Failed to load application details. Please try again.');
     } finally {
       setRefreshing(false);
     }

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, typography } from '../theme';
 
 const STATUS_CONFIG = {
@@ -65,78 +66,6 @@ const STATUS_CONFIG = {
   },
 };
 
-// Mock data - TODO: Replace with real API data
-const MOCK_APPLICATIONS = [
-  {
-    id: 'APP001',
-    schemeName: 'PM Kisan Samman Nidhi',
-    schemeNameHindi: 'पीएम किसान सम्मान निधि',
-    category: 'Agriculture',
-    status: 'approved',
-    submittedDate: '2026-02-15',
-    lastUpdated: '2026-03-01',
-    applicationNumber: 'PMK2026001234',
-  },
-  {
-    id: 'APP002',
-    schemeName: 'Pradhan Mantri Awas Yojana',
-    schemeNameHindi: 'प्रधानमंत्री आवास योजना',
-    category: 'Housing',
-    status: 'processing',
-    submittedDate: '2026-03-01',
-    lastUpdated: '2026-03-05',
-    applicationNumber: 'PMAY2026005678',
-  },
-  {
-    id: 'APP003',
-    schemeName: 'Ayushman Bharat',
-    schemeNameHindi: 'आयुष्मान भारत',
-    category: 'Healthcare',
-    status: 'under_review',
-    submittedDate: '2026-02-20',
-    lastUpdated: '2026-02-28',
-    applicationNumber: 'ABY2026002345',
-  },
-  {
-    id: 'APP004',
-    schemeName: 'National Scholarship Portal',
-    schemeNameHindi: 'राष्ट्रीय छात्रवृत्ति पोर्टल',
-    category: 'Education',
-    status: 'submitted',
-    submittedDate: '2026-03-05',
-    lastUpdated: '2026-03-05',
-    applicationNumber: 'NSP2026003456',
-  },
-  {
-    id: 'APP005',
-    schemeName: 'PM Ujjwala Yojana',
-    schemeNameHindi: 'पीएम उज्ज्वला योजना',
-    category: 'Energy',
-    status: 'completed',
-    submittedDate: '2026-01-10',
-    lastUpdated: '2026-02-01',
-    applicationNumber: 'PMU2026000123',
-  },
-  {
-    id: 'APP006',
-    schemeName: 'Stand Up India',
-    schemeNameHindi: 'स्टैंड अप इंडिया',
-    category: 'Business',
-    status: 'draft',
-    submittedDate: null,
-    lastUpdated: '2026-03-04',
-    applicationNumber: null,
-  },
-];
-
-const FILTER_OPTIONS = [
-  { id: 'all', label: 'All', labelHindi: 'सभी', count: 0 },
-  { id: 'submitted', label: 'Submitted', labelHindi: 'जमा', count: 0 },
-  { id: 'processing', label: 'Processing', labelHindi: 'प्रक्रिया', count: 0 },
-  { id: 'approved', label: 'Approved', labelHindi: 'स्वीकृत', count: 0 },
-  { id: 'draft', label: 'Draft', labelHindi: 'ड्राफ़्ट', count: 0 },
-];
-
 export default function ApplicationHistoryScreen({ navigation }) {
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
@@ -153,10 +82,17 @@ export default function ApplicationHistoryScreen({ navigation }) {
     applyFilters();
   }, [selectedFilter, searchQuery, applications]);
 
-  const loadApplications = () => {
-    // TODO: Fetch from API/AsyncStorage
-    setApplications(MOCK_APPLICATIONS);
-    calculateFilterCounts(MOCK_APPLICATIONS);
+  const loadApplications = async () => {
+    try {
+      const storedApps = await AsyncStorage.getItem('submittedApplications');
+      const apps = storedApps ? JSON.parse(storedApps) : [];
+      setApplications(apps);
+      calculateFilterCounts(apps);
+    } catch (error) {
+      console.error('Failed to load applications:', error);
+      setApplications([]);
+      calculateFilterCounts([]);
+    }
   };
 
   const calculateFilterCounts = (apps) => {

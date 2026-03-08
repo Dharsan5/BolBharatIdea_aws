@@ -185,7 +185,7 @@ function LanguageCard({ language, isSelected, onSelect, delay }) {
           </View>
         )}
         <View style={styles.languageIconContainer}>
-          <Text style={{ fontSize: 32 }}>{language.flag || '🇮🇳'}</Text>
+          <Ionicons name="language" size={30} color={colors.textSecondary} />
         </View>
         <Text style={styles.languageNative}>{language.nativeName}</Text>
         <Text style={styles.languageEnglish}>{language.name}</Text>

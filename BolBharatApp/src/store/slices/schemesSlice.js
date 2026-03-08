@@ -6,25 +6,15 @@ export const fetchSchemes = createAsyncThunk(
   'schemes/fetchSchemes',
   async ({ query, category, filters }, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call to AWS Lambda + Bedrock
-      // const response = await fetch(`${API_URL}/schemes/search`, {
-      //   method: 'POST',
-      //   body: JSON.stringify({ query, category, filters }),
-      // });
-      // return await response.json();
-      
-      // Mock data for now
-      return [
-        {
-          id: '1',
-          name: 'Pradhan Mantri Fasal Bima Yojana',
-          nameHindi: 'प्रधानमंत्री फसल बीमा योजना',
-          category: 'Agriculture',
-          description: 'Crop insurance scheme for farmers',
-          relevanceScore: 95,
-          benefits: '₹2 Lakh coverage per farmer',
-        },
-      ];
+      const response = await fetch(`${process.env.API_URL}/schemes/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, category, filters }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch schemes');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -35,12 +25,11 @@ export const fetchSchemeDetails = createAsyncThunk(
   'schemes/fetchSchemeDetails',
   async (schemeId, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      return {
-        id: schemeId,
-        name: 'Scheme Name',
-        details: 'Detailed information...',
-      };
+      const response = await fetch(`${process.env.API_URL}/schemes/${schemeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch scheme details');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }

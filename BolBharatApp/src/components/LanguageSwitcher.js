@@ -123,7 +123,7 @@ export default function LanguageSwitcher({ visible = false, onClose, showAsButto
           style={styles.languageButton}
         >
           <View style={styles.languageInfo}>
-            <Text style={styles.languageFlag}>{language.flag}</Text>
+            <MaterialCommunityIcons name="translate" size={22} color={theme.colors.textSecondary} />
             <View style={styles.languageTextContainer}>
               <Text
                 style={[

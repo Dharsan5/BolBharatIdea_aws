@@ -12,61 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { useLanguage } from '../context/LanguageContext';
 
-const LANGUAGES = [
-  {
-    id: 'en',
-    name: 'English',
-    nativeName: 'English',
-  },
-  {
-    id: 'hi',
-    name: 'Hindi',
-    nativeName: 'हिन्दी',
-  },
-  {
-    id: 'ta',
-    name: 'Tamil',
-    nativeName: 'தமிழ்',
-  },
-  {
-    id: 'te',
-    name: 'Telugu',
-    nativeName: 'తెలుగు',
-  },
-  {
-    id: 'kn',
-    name: 'Kannada',
-    nativeName: 'ಕನ್ನಡ',
-  },
-  {
-    id: 'ml',
-    name: 'Malayalam',
-    nativeName: 'മലയാളം',
-  },
-  {
-    id: 'mr',
-    name: 'Marathi',
-    nativeName: 'मराठी',
-  },
-  {
-    id: 'bn',
-    name: 'Bengali',
-    nativeName: 'বাংলা',
-  },
-  {
-    id: 'gu',
-    name: 'Gujarati',
-    nativeName: 'ગુજરાતી',
-  },
-  {
-    id: 'pa',
-    name: 'Punjabi',
-    nativeName: 'ਪੰਜਾਬੀ',
-  },
-];
-
 export default function LanguagePreferencesScreen({ navigation }) {
-  const { currentLanguage, changeLanguage } = useLanguage();
+  const { currentLanguage, changeLanguage, languages } = useLanguage();
   const [tempSelection, setTempSelection] = useState(currentLanguage.id);
 
   const handleSave = async () => {
@@ -115,7 +62,7 @@ export default function LanguagePreferencesScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {LANGUAGES.map((language) => {
+        {languages.map((language) => {
           const isSelected = tempSelection === language.id;
           
           return (
@@ -258,9 +205,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   languageNativeName: {
-    ...typography.h3,
+    ...typography.small,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   languageNativeNameSelected: {
     color: colors.primary,

@@ -6,29 +6,11 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (userId, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${API_URL}/users/${userId}`);
-      // return await response.json();
-      
-      // Mock data for now
-      return {
-        id: userId,
-        name: 'User Name',
-        phone: '+91 98765 43210',
-        email: 'user@example.com',
-        language: 'hi',
-        location: {
-          state: 'Maharashtra',
-          district: 'Mumbai',
-          pincode: '400001',
-        },
-        demographics: {
-          age: 35,
-          occupation: 'Farmer',
-          income: 'Below 2.5L',
-          category: 'General',
-        },
-      };
+      const response = await fetch(`${process.env.API_URL}/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -39,14 +21,15 @@ export const updateUserProfile = createAsyncThunk(
   'user/updateProfile',
   async (userData, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${API_URL}/users/${userData.id}`, {
-      //   method: 'PUT',
-      //   body: JSON.stringify(userData),
-      // });
-      // return await response.json();
-      
-      return userData;
+      const response = await fetch(`${process.env.API_URL}/users/${userData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update user profile');
+      }
+      return await response.json();
     } catch (error) {
       return rejectWithValue(error.message);
     }

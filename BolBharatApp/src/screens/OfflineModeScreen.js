@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,24 @@ import {
   Switch,
   Alert,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchSchemes } from '../store/slices/schemesSlice';
+import { fetchApplications } from '../store/slices/formsSlice';
+import { fetchDocumentHistory } from '../store/slices/documentsSlice';
+import { setOfflineMode } from '../store/slices/userSlice';
 import { colors, spacing, typography } from '../theme';
+
+const SETTINGS_KEY = 'offlineSettings';
+const PERSIST_ROOT_KEY = 'persist:root';
+const SUBMITTED_APPLICATIONS_KEY = 'submittedApplications';
+const VOICE_HISTORY_KEY = 'voiceHistory';
+const API_CACHE_KEY = '@api_cache';
 
 const CACHE_DURATION_OPTIONS = [
   { id: '1_day', name: '1 Day', value: 1 },
@@ -27,40 +41,138 @@ const SYNC_FREQUENCY_OPTIONS = [
 ];
 
 export default function OfflineModeScreen({ navigation }) {
-  // TODO: Load from AsyncStorage or global state
+  const dispatch = useDispatch();
+  const userProfile = useSelector((state) => state.user.profile);
+  const reduxOfflineMode = useSelector((state) => state.user.offlineMode);
+
   const [offlineModeEnabled, setOfflineModeEnabled] = useState(false);
   const [autoSync, setAutoSync] = useState(true);
-  const [syncFrequency, setSyncFrequency] = useState('wifi_only');
+  const [syncFrequency, setSyncFrequency] = useState('always');
   const [showSyncPicker, setShowSyncPicker] = useState(false);
-  
-  // Cache settings
   const [cacheDuration, setCacheDuration] = useState('30_days');
   const [showCachePicker, setShowCachePicker] = useState(false);
   const [cacheSchemes, setCacheSchemes] = useState(true);
   const [cacheDocuments, setCacheDocuments] = useState(true);
   const [cacheVoiceRecordings, setCacheVoiceRecordings] = useState(false);
   const [cacheForms, setCacheForms] = useState(true);
-  
-  // Data usage (mock data - TODO: get real values)
-  const [storageUsed, setStorageUsed] = useState('45.3 MB');
-  const [cachedItems, setCachedItems] = useState({
-    schemes: 23,
-    documents: 12,
-    forms: 8,
-    recordings: 5,
-  });
+  const [storageUsed, setStorageUsed] = useState('0 KB');
+  const [cachedItems, setCachedItems] = useState({ schemes: 0, documents: 0, forms: 0, recordings: 0 });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
+
+  const parseMaybeJson = (value, fallback = null) => {
+    if (!value || typeof value !== 'string') {
+      return fallback;
+    }
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
+
+  const saveSettings = useCallback(async (updates) => {
+    try {
+      const stored = await AsyncStorage.getItem(SETTINGS_KEY);
+      const current = stored ? JSON.parse(stored) : {};
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...current, ...updates }));
+    } catch (e) {
+      console.error('Failed to save offline settings', e);
+    }
+  }, []);
+
+  const loadStorageStats = useCallback(async () => {
+    try {
+      let totalBytes = 0;
+      let schemesCount = 0, docsCount = 0, formsCount = 0, recordingsCount = 0;
+
+      const persistRoot = await AsyncStorage.getItem(PERSIST_ROOT_KEY);
+      if (persistRoot) {
+        totalBytes += persistRoot.length;
+        const root = parseMaybeJson(persistRoot, {});
+        if (root.schemes) {
+          const s = parseMaybeJson(root.schemes, {});
+          schemesCount = (s.schemes?.length ?? 0) + (s.savedSchemes?.length ?? 0);
+        }
+        if (root.documents) {
+          const d = parseMaybeJson(root.documents, {});
+          docsCount = d.documents?.length ?? 0;
+        }
+      }
+
+      const apps = await AsyncStorage.getItem(SUBMITTED_APPLICATIONS_KEY);
+      if (apps) {
+        totalBytes += apps.length;
+        const parsedApps = parseMaybeJson(apps, []);
+        formsCount = Array.isArray(parsedApps) ? parsedApps.length : 0;
+      }
+
+      const voice = await AsyncStorage.getItem(VOICE_HISTORY_KEY);
+      if (voice) {
+        totalBytes += voice.length;
+        const parsedVoice = parseMaybeJson(voice, []);
+        recordingsCount = Array.isArray(parsedVoice) ? parsedVoice.length : 0;
+      }
+
+      const apiCache = await AsyncStorage.getItem(API_CACHE_KEY);
+      if (apiCache) {
+        totalBytes += apiCache.length;
+      }
+
+      const kb = totalBytes / 1024;
+      setStorageUsed(kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb.toFixed(1)} KB`);
+      setCachedItems({ schemes: schemesCount, documents: docsCount, forms: formsCount, recordings: recordingsCount });
+    } catch (e) {
+      console.error('Failed to load storage stats', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(SETTINGS_KEY);
+        if (stored) {
+          const s = JSON.parse(stored);
+          setOfflineModeEnabled(s.offlineModeEnabled ?? false);
+          dispatch(setOfflineMode(s.offlineModeEnabled ?? false));
+          setAutoSync(s.autoSync ?? true);
+          setSyncFrequency(s.syncFrequency ?? 'always');
+          setCacheDuration(s.cacheDuration ?? '30_days');
+          setCacheSchemes(s.cacheSchemes ?? true);
+          setCacheDocuments(s.cacheDocuments ?? true);
+          setCacheForms(s.cacheForms ?? true);
+          setCacheVoiceRecordings(s.cacheVoiceRecordings ?? false);
+        } else {
+          setOfflineModeEnabled(reduxOfflineMode ?? false);
+        }
+      } catch (e) {
+        console.error('Failed to load offline settings', e);
+      }
+    };
+    loadSettings();
+    loadStorageStats();
+  }, [dispatch, loadStorageStats, reduxOfflineMode]);
 
   const handleToggleOfflineMode = (value) => {
     setOfflineModeEnabled(value);
-    // TODO: Save to AsyncStorage
-    // TODO: Trigger initial data sync if enabled
+    dispatch(setOfflineMode(value));
+    saveSettings({ offlineModeEnabled: value });
+    if (!value) {
+      setShowSyncPicker(false);
+      setShowCachePicker(false);
+    }
     if (value) {
       Alert.alert(
         'Offline Mode Enabled',
-        'Data will be downloaded for offline access. This may use your mobile data if Wi-Fi is not available.',
+        'Data will be downloaded for offline access. This will use your internet connection (Wi-Fi or mobile data).',
         [{ text: 'OK' }]
       );
     }
+  };
+
+  const handleToggle = (setter, key) => (value) => {
+    setter(value);
+    saveSettings({ [key]: value });
   };
 
   const handleSyncNow = () => {
@@ -71,9 +183,40 @@ export default function OfflineModeScreen({ navigation }) {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Sync',
-          onPress: () => {
-            // TODO: Implement sync logic
-            Alert.alert('Success', 'Data synced successfully');
+          onPress: async () => {
+            setIsSyncing(true);
+            try {
+              const netState = await NetInfo.fetch();
+              const isOnline = !!(netState.isConnected && netState.isInternetReachable !== false);
+              if (!isOnline) {
+                Alert.alert('Offline', 'Connect to the internet to sync now.');
+                return;
+              }
+
+              if (syncFrequency === 'wifi_only' && netState.type !== 'wifi') {
+                Alert.alert('Wi-Fi Required', 'Your sync preference is set to Wi-Fi only. Connect to Wi-Fi or change sync frequency to "Always" in settings.');
+                return;
+              }
+
+              if (cacheSchemes) {
+                await dispatch(fetchSchemes({ query: '', category: 'all', filters: {} }));
+              }
+
+              if (cacheForms) {
+                await dispatch(fetchApplications(userProfile?.id));
+              }
+
+              if (cacheDocuments) {
+                await dispatch(fetchDocumentHistory());
+              }
+
+              await loadStorageStats();
+              Alert.alert('Success', 'Data synced successfully');
+            } catch (e) {
+              Alert.alert('Error', 'Sync failed. Please try again.');
+            } finally {
+              setIsSyncing(false);
+            }
           },
         },
       ]
@@ -89,16 +232,30 @@ export default function OfflineModeScreen({ navigation }) {
         {
           text: 'Clear',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement cache clearing
-            Alert.alert('Success', 'Cache cleared successfully');
+          onPress: async () => {
+            setIsClearingCache(true);
+            try {
+              await AsyncStorage.multiRemove([
+                PERSIST_ROOT_KEY,
+                SUBMITTED_APPLICATIONS_KEY,
+                VOICE_HISTORY_KEY,
+                API_CACHE_KEY,
+              ]);
+              setStorageUsed('0 KB');
+              setCachedItems({ schemes: 0, documents: 0, forms: 0, recordings: 0 });
+              Alert.alert('Success', 'Cache cleared successfully');
+            } catch (e) {
+              Alert.alert('Error', 'Failed to clear cache. Please try again.');
+            } finally {
+              setIsClearingCache(false);
+            }
           },
         },
       ]
     );
   };
 
-  const renderPickerOption = (option, selectedValue, onSelect, showNative = false) => {
+  const renderPickerOption = (option, selectedValue, onSelect, settingKey, showNative = false) => {
     const isSelected = selectedValue === option.id;
     
     return (
@@ -111,6 +268,7 @@ export default function OfflineModeScreen({ navigation }) {
         ]}
         onPress={() => {
           onSelect(option.id);
+          saveSettings({ [settingKey]: option.id });
           setShowSyncPicker(false);
           setShowCachePicker(false);
         }}
@@ -230,7 +388,7 @@ export default function OfflineModeScreen({ navigation }) {
             </View>
             <Switch
               value={autoSync}
-              onValueChange={setAutoSync}
+              onValueChange={handleToggle(setAutoSync, 'autoSync')}
               disabled={!offlineModeEnabled}
               trackColor={{ false: colors.gray300, true: colors.primary }}
               thumbColor={colors.white}
@@ -249,10 +407,10 @@ export default function OfflineModeScreen({ navigation }) {
               onPress={() => setShowSyncPicker(!showSyncPicker)}
               disabled={!offlineModeEnabled || !autoSync}
             >
-              <Ionicons 
-                name={showSyncPicker ? "chevron-up" : "chevron-down"} 
-                size={24} 
-                color={colors.textSecondary} 
+              <Ionicons
+                name={showSyncPicker ? "chevron-up" : "chevron-down"}
+                size={24}
+                color={colors.textSecondary}
               />
             </TouchableOpacity>
           </View>
@@ -260,7 +418,9 @@ export default function OfflineModeScreen({ navigation }) {
 
         {showSyncPicker && (
           <View style={styles.pickerContainer}>
-            {SYNC_FREQUENCY_OPTIONS.map(option => renderPickerOption(option, syncFrequency, setSyncFrequency, true))}
+            {SYNC_FREQUENCY_OPTIONS.map((option) =>
+              renderPickerOption(option, syncFrequency, setSyncFrequency, 'syncFrequency', true)
+            )}
           </View>
         )}
 
@@ -291,7 +451,9 @@ export default function OfflineModeScreen({ navigation }) {
 
         {showCachePicker && (
           <View style={styles.pickerContainer}>
-            {CACHE_DURATION_OPTIONS.map(option => renderPickerOption(option, cacheDuration, setCacheDuration))}
+            {CACHE_DURATION_OPTIONS.map((option) =>
+              renderPickerOption(option, cacheDuration, setCacheDuration, 'cacheDuration')
+            )}
           </View>
         )}
 
@@ -309,7 +471,7 @@ export default function OfflineModeScreen({ navigation }) {
             </View>
             <Switch
               value={cacheSchemes}
-              onValueChange={setCacheSchemes}
+              onValueChange={handleToggle(setCacheSchemes, 'cacheSchemes')}
               disabled={!offlineModeEnabled}
               trackColor={{ false: colors.gray300, true: colors.primary }}
               thumbColor={colors.white}
@@ -326,7 +488,7 @@ export default function OfflineModeScreen({ navigation }) {
             </View>
             <Switch
               value={cacheDocuments}
-              onValueChange={setCacheDocuments}
+              onValueChange={handleToggle(setCacheDocuments, 'cacheDocuments')}
               disabled={!offlineModeEnabled}
               trackColor={{ false: colors.gray300, true: colors.primary }}
               thumbColor={colors.white}
@@ -343,7 +505,7 @@ export default function OfflineModeScreen({ navigation }) {
             </View>
             <Switch
               value={cacheForms}
-              onValueChange={setCacheForms}
+              onValueChange={handleToggle(setCacheForms, 'cacheForms')}
               disabled={!offlineModeEnabled}
               trackColor={{ false: colors.gray300, true: colors.primary }}
               thumbColor={colors.white}
@@ -360,7 +522,7 @@ export default function OfflineModeScreen({ navigation }) {
             </View>
             <Switch
               value={cacheVoiceRecordings}
-              onValueChange={setCacheVoiceRecordings}
+              onValueChange={handleToggle(setCacheVoiceRecordings, 'cacheVoiceRecordings')}
               disabled={!offlineModeEnabled}
               trackColor={{ false: colors.gray300, true: colors.primary }}
               thumbColor={colors.white}
@@ -375,14 +537,18 @@ export default function OfflineModeScreen({ navigation }) {
           <TouchableOpacity 
             style={styles.actionItem}
             onPress={handleSyncNow}
-            disabled={!offlineModeEnabled}
+            disabled={!offlineModeEnabled || isSyncing}
           >
             <View style={styles.actionIconContainer}>
-              <MaterialCommunityIcons name="sync" size={24} color={colors.primary} />
+              {isSyncing ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <MaterialCommunityIcons name="sync" size={24} color={colors.primary} />
+              )}
             </View>
             <View style={styles.actionInfo}>
               <Text style={[styles.actionLabel, !offlineModeEnabled && styles.disabledText]}>
-                Sync Now
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
               </Text>
               <Text style={styles.actionSubtext}>
                 Download latest content
@@ -398,14 +564,18 @@ export default function OfflineModeScreen({ navigation }) {
           <TouchableOpacity 
             style={styles.actionItem}
             onPress={handleClearCache}
-            disabled={!offlineModeEnabled}
+            disabled={!offlineModeEnabled || isClearingCache}
           >
             <View style={styles.actionIconContainer}>
-              <MaterialCommunityIcons name="delete-sweep" size={24} color={colors.warning} />
+              {isClearingCache ? (
+                <ActivityIndicator size="small" color={colors.warning} />
+              ) : (
+                <MaterialCommunityIcons name="delete-sweep" size={24} color={colors.warning} />
+              )}
             </View>
             <View style={styles.actionInfo}>
               <Text style={[styles.actionLabel, !offlineModeEnabled && styles.disabledText]}>
-                Clear Cache
+                {isClearingCache ? 'Clearing...' : 'Clear Cache'}
               </Text>
               <Text style={styles.actionSubtext}>
                 Free up storage space

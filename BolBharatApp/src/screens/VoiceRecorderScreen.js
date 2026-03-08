@@ -13,7 +13,7 @@ import { translations } from '../i18n/translations';
 import AnimatedBlob from '../components/AnimatedBlob';
 import { saveConversation } from '../api/database';
 
-// 👇 Paste your Lambda Function URL here
+// Paste your Lambda Function URL here
 const LAMBDA_URL = 'https://ci45mlntxomy3rta7a2rb6qidu0wusvg.lambda-url.eu-north-1.on.aws/';
 
 // Map app language codes to BCP-47 locale codes for speech recognition
@@ -103,7 +103,7 @@ export default function VoiceRecorderScreen({ navigation }) {
     };
   }, []);
 
-  // 🔥 Real AI call to Lambda
+  // Real AI call to Lambda
   const getAIResponse = async (userMessage) => {
     try {
       const res = await fetch(LAMBDA_URL, {

@@ -13,138 +13,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import { useSavedSchemes } from '../context/SavedSchemesContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchSchemes } from '../store/slices/schemesSlice';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - theme.spacing.lg * 2;
 
-// Mock schemes data with relevance scores
-// In production, this would come from AWS Lambda + Bedrock
-const MOCK_SCHEME_RESULTS = [
-  {
-    id: '1',
-    name: 'Pradhan Mantri Fasal Bima Yojana',
-    nameHindi: 'प्रधानमंत्री फसल बीमा योजना',
-    category: 'Agriculture',
-    categoryHindi: 'कृषि',
-    description: 'Crop insurance scheme for farmers against crop loss',
-    descriptionHindi: 'फसल नुकसान के खिलाफ किसानों के लिए बीमा योजना',
-    relevanceScore: 95,
-    matchReason: 'High match based on your farming profile and land ownership',
-    matchReasonHindi: 'आपकी खेती प्रोफ़ाइल और भूमि स्वामित्व के आधार पर उच्च मिलान',
-    benefits: '₹2 Lakh coverage per farmer',
-    benefitsHindi: '₹2 लाख प्रति किसान कवरेज',
-    eligibilityMatch: ['Farmer', 'Land Owner', 'Rural Area'],
-    ministryIcon: 'leaf',
-    applicationDeadline: '31 Dec 2026',
-  },
-  {
-    id: '2',
-    name: 'PM Kisan Samman Nidhi',
-    nameHindi: 'पीएम किसान सम्मान निधि',
-    category: 'Agriculture',
-    categoryHindi: 'कृषि',
-    description: 'Direct income support of ₹6,000 per year to farmers',
-    descriptionHindi: 'किसानों को ₹6,000 प्रति वर्ष प्रत्यक्ष आय सहायता',
-    relevanceScore: 92,
-    matchReason: 'Matches your occupation and land holding criteria',
-    matchReasonHindi: 'आपके व्यवसाय और भूमि धारण मानदंड से मेल खाता है',
-    benefits: '₹2,000 per installment, 3 times/year',
-    benefitsHindi: '₹2,000 प्रति किस्त, वर्ष में 3 बार',
-    eligibilityMatch: ['Farmer', 'Small Landholding'],
-    ministryIcon: 'agriculture',
-    applicationDeadline: 'Always Open',
-  },
-  {
-    id: '3',
-    name: 'Ayushman Bharat - PM JAY',
-    nameHindi: 'आयुष्मान भारत - पीएम जेएवाई',
-    category: 'Healthcare',
-    categoryHindi: 'स्वास्थ्य',
-    description: 'Health insurance providing ₹5 lakh coverage',
-    descriptionHindi: '₹5 लाख कवरेज प्रदान करने वाला स्वास्थ्य बीमा',
-    relevanceScore: 88,
-    matchReason: 'Eligible based on your income and family size',
-    matchReasonHindi: 'आपकी आय और परिवार के आकार के आधार पर पात्र',
-    benefits: '₹5 Lakh annual health coverage',
-    benefitsHindi: '₹5 लाख वार्षिक स्वास्थ्य कवरेज',
-    eligibilityMatch: ['Below Poverty Line', 'Rural Area'],
-    ministryIcon: 'medical',
-    applicationDeadline: 'Always Open',
-  },
-  {
-    id: '4',
-    name: 'PM Awas Yojana - Gramin',
-    nameHindi: 'पीएम आवास योजना - ग्रामीण',
-    category: 'Housing',
-    categoryHindi: 'आवास',
-    description: 'Housing assistance for rural households',
-    descriptionHindi: 'ग्रामीण परिवारों के लिए आवास सहायता',
-    relevanceScore: 85,
-    matchReason: 'Based on your housing status and rural location',
-    matchReasonHindi: 'आपकी आवास स्थिति और ग्रामीण स्थान के आधार पर',
-    benefits: '₹1.2 Lakh for plain areas',
-    benefitsHindi: 'मैदानी क्षेत्रों के लिए ₹1.2 लाख',
-    eligibilityMatch: ['Rural Area', 'Homeless/Kutcha House'],
-    ministryIcon: 'home',
-    applicationDeadline: '31 Mar 2027',
-  },
-  {
-    id: '5',
-    name: 'Pradhan Mantri Mudra Yojana',
-    nameHindi: 'प्रधानमंत्री मुद्रा योजना',
-    category: 'Finance',
-    categoryHindi: 'वित्त',
-    description: 'Micro-loans for small businesses',
-    descriptionHindi: 'छोटे व्यवसायों के लिए सूक्ष्म ऋण',
-    relevanceScore: 78,
-    matchReason: 'Suitable for business expansion plans',
-    matchReasonHindi: 'व्यवसाय विस्तार योजनाओं के लिए उपयुक्त',
-    benefits: 'Loans up to ₹10 Lakh',
-    benefitsHindi: '₹10 लाख तक ऋण',
-    eligibilityMatch: ['Self-Employed', 'Business Owner'],
-    ministryIcon: 'cash',
-    applicationDeadline: 'Always Open',
-  },
-  {
-    id: '6',
-    name: 'National Social Assistance Programme',
-    nameHindi: 'राष्ट्रीय सामाजिक सहायता कार्यक्रम',
-    category: 'Social Welfare',
-    categoryHindi: 'सामाजिक कल्याण',
-    description: 'Pension for elderly, widows, and disabled',
-    descriptionHindi: 'वृद्ध, विधवाओं और विकलांगों के लिए पेंशन',
-    relevanceScore: 72,
-    matchReason: 'Age and income criteria match',
-    matchReasonHindi: 'आयु और आय मानदंड मेल खाते हैं',
-    benefits: '₹200-500 monthly pension',
-    benefitsHindi: '₹200-500 मासिक पेंशन',
-    eligibilityMatch: ['Age 60+', 'BPL Family'],
-    ministryIcon: 'people',
-    applicationDeadline: 'Always Open',
-  },
-];
-
-const SORT_OPTIONS = [
-  { id: 'relevance', label: 'Relevance', labelHindi: 'प्रासंगिकता', icon: 'trending-up' },
-  { id: 'benefits', label: 'Benefits', labelHindi: 'लाभ', icon: 'gift' },
-  { id: 'deadline', label: 'Deadline', labelHindi: 'समय सीमा', icon: 'time' },
-];
-
-const FILTER_CATEGORIES = [
-  { id: 'all', label: 'All', labelHindi: 'सभी', icon: 'apps' },
-  { id: 'Agriculture', label: 'Agriculture', labelHindi: 'कृषि', icon: 'leaf' },
-  { id: 'Healthcare', label: 'Healthcare', labelHindi: 'स्वास्थ्य', icon: 'medical' },
-  { id: 'Housing', label: 'Housing', labelHindi: 'आवास', icon: 'home' },
-  { id: 'Finance', label: 'Finance', labelHindi: 'वित्त', icon: 'cash' },
-  { id: 'Social Welfare', label: 'Welfare', labelHindi: 'कल्याण', icon: 'people' },
-];
-
 export default function SchemeListScreen({ navigation, route }) {
+  const dispatch = useDispatch();
+  const reduxSchemes = useSelector(state => state.schemes.schemes);
+  const schemesLoading = useSelector(state => state.schemes.loading);
+  
   const { query = '', category = 'all', userProfile = {} } = route.params || {};
   const { savedSchemeIds, isSchemeSaved, toggleSaveScheme } = useSavedSchemes();
   
-  const [schemes, setSchemes] = useState(MOCK_SCHEME_RESULTS);
-  const [filteredSchemes, setFilteredSchemes] = useState(MOCK_SCHEME_RESULTS);
+  const [schemes, setSchemes] = useState([]);
+  const [filteredSchemes, setFilteredSchemes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState('relevance');
   const [filterCategory, setFilterCategory] = useState(category);
@@ -154,13 +38,21 @@ export default function SchemeListScreen({ navigation, route }) {
   const headerOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Simulate loading schemes from API
-    setIsLoading(true);
-    setTimeout(() => {
+    // Fetch schemes based on query and category
+    dispatch(fetchSchemes({ query, category }));
+  }, [dispatch, query, category]);
+
+  useEffect(() => {
+    if (reduxSchemes && reduxSchemes.length > 0) {
+      setSchemes(reduxSchemes);
+    }
+  }, [reduxSchemes]);
+
+  useEffect(() => {
+    if (schemes.length > 0) {
       applyFiltersAndSort();
-      setIsLoading(false);
-    }, 500);
-  }, [sortBy, filterCategory]);
+    }
+  }, [sortBy, filterCategory, schemes]);
 
   const applyFiltersAndSort = () => {
     let filtered = [...schemes];

@@ -154,7 +154,7 @@ function SchemesScreen() {
   return (
     <View>
       {!isOnline && <Text>Offline Mode</Text>}
-      {fromCache && <Text>📦 Showing cached data</Text>}
+      {fromCache && <Text>Showing cached data</Text>}
       
       {isLoading && <Text>Loading...</Text>}
       

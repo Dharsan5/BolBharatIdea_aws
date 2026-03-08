@@ -11,69 +11,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import { useSavedSchemes } from '../context/SavedSchemesContext';
-
-// Mock data - should match MOCK_SCHEMES from SchemesScreen
-const ALL_SCHEMES = {
-  '1': {
-    id: '1',
-    name: 'Pradhan Mantri Fasal Bima Yojana',
-    nameHindi: 'प्रधानमंत्री फसल बीमा योजना',
-    category: 'Agriculture',
-    description: 'Crop insurance scheme for farmers against crop loss',
-    relevance: 95,
-    benefits: '₹2 Lakh coverage per farmer',
-  },
-  '2': {
-    id: '2',
-    name: 'PM Kisan Samman Nidhi',
-    nameHindi: 'पीएम किसान सम्मान निधि',
-    category: 'Agriculture',
-    description: 'Direct income support of ₹6,000 per year to farmers',
-    relevance: 92,
-    benefits: '₹2,000 per installment, 3 times a year',
-  },
-  '3': {
-    id: '3',
-    name: 'Ayushman Bharat',
-    nameHindi: 'आयुष्मान भारत',
-    category: 'Healthcare',
-    description: 'Health insurance scheme providing free treatment',
-    relevance: 88,
-    benefits: '₹5 Lakh annual health coverage',
-  },
-  '4': {
-    id: '4',
-    name: 'PM Awas Yojana',
-    nameHindi: 'पीएम आवास योजना',
-    category: 'Housing',
-    description: 'Affordable housing scheme for economically weaker sections',
-    relevance: 85,
-    benefits: '₹2.5 Lakh subsidy on home loans',
-  },
-  '5': {
-    id: '5',
-    name: 'Pradhan Mantri Mudra Yojana',
-    nameHindi: 'प्रधानमंत्री मुद्रा योजना',
-    category: 'Finance',
-    description: 'Micro-loans for small businesses and entrepreneurs',
-    relevance: 82,
-    benefits: 'Loans up to ₹10 Lakh',
-  },
-};
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchSchemeDetails } from '../store/slices/schemesSlice';
 
 export default function SavedSchemesScreen({ navigation }) {
-  const { savedSchemeIds, toggleSaveScheme, isLoading } = useSavedSchemes();
+  const dispatch = useDispatch();
+  const reduxSchemes = useSelector(state => state.schemes.schemes);
+  const { savedSchemeIds, removeSavedScheme } = useSavedSchemes();
   const [removingId, setRemovingId] = useState(null);
 
+  // Convert Redux schemes array to object for easy lookup
+  const schemesMap = {};
+  if (reduxSchemes) {
+    reduxSchemes.forEach(scheme => {
+      schemesMap[scheme.id] = scheme;
+    });
+  }
+
   const savedSchemes = savedSchemeIds
-    .map(id => ALL_SCHEMES[id])
+    .map(id => schemesMap[id])
     .filter(Boolean);
 
   const handleRemoveSaved = async (schemeId) => {
     setRemovingId(schemeId);
     // Add slight delay for animation feedback
     setTimeout(async () => {
-      await toggleSaveScheme(schemeId);
+      await removeSavedScheme(schemeId);
       setRemovingId(null);
     }, 200);
   };
