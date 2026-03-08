@@ -79,7 +79,10 @@
     "extra": {
       "eas": {
         "projectId": "d4c65d55-91bf-4510-8c3d-1068123a95f2"
-      }
+      },
+      "apiGatewayUrl": "https://lywm2lazwiz37swnhhshrc6cuu0hatmy.lambda-url.eu-north-1.on.aws/",
+      "dbLambdaUrl": "https://lywm2lazwiz37swnhhshrc6cuu0hatmy.lambda-url.eu-north-1.on.aws/",
+      "awsRegion": "eu-north-1"
     }
   }
 }

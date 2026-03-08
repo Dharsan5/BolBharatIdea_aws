@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { documentsApi } from '../../services/awsApi';
 
 // Async thunks for document operations
 
@@ -6,15 +7,7 @@ export const processDocument = createAsyncThunk(
   'documents/processDocument',
   async ({ imageUri, documentType }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/documents/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUri, documentType }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to process document');
-      }
-      return await response.json();
+        const data = await documentsApi.processDocument({ imageUri, documentType });
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -25,11 +18,7 @@ export const fetchDocumentHistory = createAsyncThunk(
   'documents/fetchHistory',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/documents/history`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch document history');
-      }
-      return await response.json();
+        const data = await documentsApi.getDocumentHistory();
     } catch (error) {
       return rejectWithValue(error.message);
     }

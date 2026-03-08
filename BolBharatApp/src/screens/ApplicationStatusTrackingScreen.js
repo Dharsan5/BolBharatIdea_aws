@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import theme from '../theme';
+import { formsApi } from '../services/awsApi';
 
 const STATUS_CONFIG = {
   draft: {
@@ -65,11 +66,7 @@ export default function ApplicationStatusTrackingScreen({ route, navigation }) {
   const fetchApplicationDetails = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch(`${process.env.API_URL}/applications/${applicationId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch application');
-      }
-      const data = await response.json();
+      const data = await formsApi.trackApplication(applicationId);
       setApplication(data);
     } catch (error) {
       console.error('Error fetching application:', error);

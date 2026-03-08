@@ -1,20 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { schemesApi } from '../../services/awsApi';
 
 // Async thunks for scheme operations
 
 export const fetchSchemes = createAsyncThunk(
   'schemes/fetchSchemes',
-  async ({ query, category, filters }, { rejectWithValue }) => {
+    async ({ query = '', category = 'all', filters = {} }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/schemes/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, category, filters }),
+        const data = await schemesApi.searchSchemes({
+          query,
+          category,
+          filters,
       });
-      if (!response.ok) {
-        throw new Error('Failed to fetch schemes');
-      }
-      return await response.json();
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -25,11 +23,8 @@ export const fetchSchemeDetails = createAsyncThunk(
   'schemes/fetchSchemeDetails',
   async (schemeId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/schemes/${schemeId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch scheme details');
-      }
-      return await response.json();
+        const data = await schemesApi.getSchemeDetails(schemeId);
+        return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }

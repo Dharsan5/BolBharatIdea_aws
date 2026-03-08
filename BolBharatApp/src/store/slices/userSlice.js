@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { userApi } from '../../services/awsApi';
 
 // Async thunks for user operations
 
@@ -6,11 +7,8 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchProfile',
   async (userId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/users/${userId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
-      }
-      return await response.json();
+      const data = await userApi.getUserProfile(userId);
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -21,15 +19,8 @@ export const updateUserProfile = createAsyncThunk(
   'user/updateProfile',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/users/${userData.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to update user profile');
-      }
-      return await response.json();
+      const data = await userApi.updateUserProfile(userData);
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }

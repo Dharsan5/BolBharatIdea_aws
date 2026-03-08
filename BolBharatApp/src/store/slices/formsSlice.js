@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getApplications, saveApplication } from '../../api/database';
+import { formsApi } from '../../services/awsApi';
+import { saveApplication } from '../../api/database';
 
 // Async thunks for form operations
 
@@ -7,15 +8,8 @@ export const submitForm = createAsyncThunk(
   'forms/submitForm',
   async ({ formId, formData }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${process.env.API_URL}/forms/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId, formData }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to submit form');
-      }
-      return await response.json();
+      const data = await formsApi.submitForm({ formId, formData });
+      return data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -27,7 +21,7 @@ export const fetchApplications = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       if (!userId) return [];
-      const response = await getApplications(userId);
+      const response = await formsApi.getApplications(userId);
       return response?.applications || response?.data || response?.items || [];
     } catch (error) {
       return rejectWithValue(error.message);

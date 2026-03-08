@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import theme from '../theme';
+import { formsApi } from '../services/awsApi';
 
 const STATUS_CONFIG = {
   draft: { color: theme.colors.textSecondary, bgColor: '#f5f5f5', icon: 'document-outline' },
@@ -54,11 +55,7 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
   const fetchApplicationDetails = async () => {
     setRefreshing(true);
     try {
-      const response = await fetch(`${process.env.API_URL}/applications/${applicationId}/details`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch application details');
-      }
-      const data = await response.json();
+      const data = await formsApi.getApplicationDetails(applicationId);
       setApplication(data);
     } catch (error) {
       console.error('Error fetching application:', error);
