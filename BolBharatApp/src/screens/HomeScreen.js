@@ -7,6 +7,7 @@ import AnimatedBlob from '../components/AnimatedBlob';
 import OfflineBanner from '../components/OfflineBanner';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
+import { translations } from '../i18n/translations';
 
 export default function HomeScreen({ navigation }) {
   const [isListening, setIsListening] = useState(false);
@@ -15,6 +16,8 @@ export default function HomeScreen({ navigation }) {
   const [pendingSync, setPendingSync] = useState(0); // For demo: number of items pending sync
   const [showLanguageSwitcher, setShowLanguageSwitcher] = useState(false);
   const { currentLanguage } = useLanguage();
+  const language = currentLanguage.id;
+  const t = (key) => translations[language]?.[key] || translations['en'][key] || key;
   
   const amplitudeInterval = useRef(null);
   const micButtonScale = useRef(new Animated.Value(1)).current;
@@ -28,32 +31,7 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   const startListening = () => {
-    setIsListening(true);
-    setTranscript('');
-    
-    // Simulate audio amplitude changes
-    amplitudeInterval.current = setInterval(() => {
-      const randomAmplitude = Math.random() * 0.8 + 0.2;
-      setAmplitude(randomAmplitude);
-    }, 100);
-
-    // Button press animation
-    Animated.sequence([
-      Animated.spring(micButtonScale, {
-        toValue: 0.9,
-        useNativeDriver: true,
-      }),
-      Animated.spring(micButtonScale, {
-        toValue: 1,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Simulate response after 3 seconds
-    setTimeout(() => {
-      stopListening();
-      setTranscript('नमस्ते! मैं आपकी कैसे मदद कर सकता हूं?\n\nHello! How can I assist you today?');
-    }, 3000);
+    navigation.navigate('VoiceRecorder');
   };
 
   const stopListening = () => {
@@ -66,11 +44,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleMicPress = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
+    navigation.navigate('VoiceRecorder');
   };
 
   const handleClear = () => {
@@ -119,7 +93,7 @@ export default function HomeScreen({ navigation }) {
           >
             <Ionicons name="globe-outline" size={20} color={theme.colors.black} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
+          <TouchableOpacity style={styles.headerIcon} onPress={() => navigation.navigate('VoiceRecorder')}>
             <Ionicons name="mic-outline" size={20} color={theme.colors.black} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
@@ -131,7 +105,7 @@ export default function HomeScreen({ navigation }) {
       {/* Status */}
       <View style={styles.statusContainer}>
         <Text style={styles.statusText}>
-          {isListening ? 'Listening...' : transcript ? 'Response' : 'Ready to help'}
+          {isListening ? t('listening') : transcript ? t('response') : t('readyToHelp')}
         </Text>
       </View>
 
@@ -148,9 +122,7 @@ export default function HomeScreen({ navigation }) {
       ) : (
         <View style={styles.poeticTextContainer}>
           <Text style={styles.poeticText}>
-            Voice for the nation,{'\n'}
-            bridging the digital divide{'\n'}
-            one conversation at a time.
+            {t('voiceForNation').split(',').join(',\n')}
           </Text>
         </View>
       )}
@@ -164,7 +136,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.cardArrow}>
             <Feather name="arrow-up-right" size={20} color={theme.colors.textSecondary} />
           </View>
-          <Text style={styles.actionCardTitle}>Your Voice{'\n'}Clips</Text>
+          <Text style={styles.actionCardTitle}>{t('yourVoiceClips').split(' ').join('\n')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionCard}>
@@ -174,7 +146,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.cardArrow}>
             <Feather name="arrow-up-right" size={20} color={theme.colors.textSecondary} />
           </View>
-          <Text style={styles.actionCardTitle}>Rapid Speech{'\n'}Capture</Text>
+          <Text style={styles.actionCardTitle}>{t('rapidSpeechCapture').split(' ').join('\n')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -182,8 +154,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.bottomBar}>
         <TouchableOpacity 
           style={styles.bottomButton}
-          onPress={startListening}
-          disabled={isListening}
+          onPress={() => {}}
         >
           <Ionicons name="refresh" size={24} color={theme.colors.black} />
         </TouchableOpacity>

@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
+import { useLanguage } from '../context/LanguageContext';
 
 const LANGUAGES = [
   {
@@ -65,19 +66,16 @@ const LANGUAGES = [
 ];
 
 export default function LanguagePreferencesScreen({ navigation }) {
-  // TODO: Get current language from AsyncStorage or global state
-  const [selectedLanguage, setSelectedLanguage] = useState('hi');
-  const [tempSelection, setTempSelection] = useState(selectedLanguage);
+  const { currentLanguage, changeLanguage } = useLanguage();
+  const [tempSelection, setTempSelection] = useState(currentLanguage.id);
 
-  const handleSave = () => {
-    setSelectedLanguage(tempSelection);
-    // TODO: Save to AsyncStorage or global state management
-    // TODO: Apply language change across the app
+  const handleSave = async () => {
+    await changeLanguage(tempSelection);
     navigation.goBack();
   };
 
   const handleCancel = () => {
-    setTempSelection(selectedLanguage);
+    setTempSelection(currentLanguage.id);
     navigation.goBack();
   };
 

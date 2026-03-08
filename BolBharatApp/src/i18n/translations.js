@@ -62,6 +62,7 @@ export const translations = {
     youSaid: 'You said:',
     housing: 'Housing',
     financialServices: 'Financial Services',
+    noSpeechDetected: 'No speech detected. Please try again.',
   },
   hi: {
     home: 'होम',
@@ -87,7 +88,7 @@ export const translations = {
     saveData: 'डेटा बचाएं',
     editProfile: 'प्रोफ़ाइल संपादित करें',
     myApplications: 'मेरे आवेदन',
-    privacySettings: 'गोपनीयता सेटिंग्स',
+    privacySettings: 'गोपनीयता सेटिंग्‍स',
     faqs: 'अक्सर पूछे जाने वाले प्रश्न',
     contactSupport: 'सहायता से संपर्क करें',
     aboutBolBharat: 'बोलभारत के बारे में',
@@ -126,6 +127,7 @@ export const translations = {
     assistant: 'सहायक',
     processing: 'प्रोसेसिंग...',
     youSaid: 'आपने कहा:',
+    noSpeechDetected: 'कोई आवाज़ नहीं मिली। कृपया पुनः प्रयास करें।',
   },
   ta: {
     home: 'முகப்பு',
@@ -190,6 +192,7 @@ export const translations = {
     assistant: 'உதவியாளர்',
     processing: 'செயலாக்கம்...',
     youSaid: 'நீங்கள் சொன்னீர்கள்:',
+    noSpeechDetected: 'பேச்சு எதுவும் கண்டறியப்படவில்லை. மீண்டும் முயற்சிக்கவும்.',
   },
   te: {
     home: 'హోమ్',
@@ -254,6 +257,7 @@ export const translations = {
     assistant: 'సహాయకుడు',
     processing: 'ప్రోసెసింగ్...',
     youSaid: 'మీరు చెప్పినది:',
+    noSpeechDetected: 'మాటలు గుర్తించబడలేదు. మళ్ళీ ప్రయత్నించండి.',
   },
   hinglish: {
     home: 'Home',
@@ -318,5 +322,6 @@ export const translations = {
     assistant: 'Assistant',
     processing: 'Processing...',
     youSaid: 'You said:',
+    noSpeechDetected: 'Koi awaaz nahi mili. Phir se try karein.',
   },
 };

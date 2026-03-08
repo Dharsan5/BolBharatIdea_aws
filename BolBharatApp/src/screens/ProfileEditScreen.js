@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, typography } from '../theme';
+import { saveUser } from '../api/database';
 
 const STATES_OF_INDIA = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
@@ -189,6 +190,15 @@ export default function ProfileEditScreen({ navigation }) {
       };
 
       await AsyncStorage.setItem('userProfile', JSON.stringify(profileData));
+
+      // Save to cloud database
+      try {
+        const userId = phoneNumber || fullName.replace(/\s+/g, '_').toLowerCase();
+        await saveUser({ userId, ...profileData });
+        console.log('Profile saved to database');
+      } catch (dbErr) {
+        console.warn('Failed to sync profile to cloud:', dbErr);
+      }
 
       Alert.alert(
         language === 'hindi' ? 'सफल' : 'Success',

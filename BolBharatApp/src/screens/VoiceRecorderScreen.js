@@ -9,6 +9,7 @@ import {
 import * as Speech from 'expo-speech';
 import theme from '../theme';
 import { useLanguage } from '../context/LanguageContext';
+import { translations } from '../i18n/translations';
 import AnimatedBlob from '../components/AnimatedBlob';
 import { saveConversation } from '../api/database';
 
@@ -38,7 +39,10 @@ const getTTSLang = (language) => {
 };
 
 export default function VoiceRecorderScreen({ navigation }) {
-  const { t, language } = useLanguage();
+  const { currentLanguage } = useLanguage();
+  const language = currentLanguage.id;
+  const t = (key) => translations[language]?.[key] || translations['en'][key] || key;
+  
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -306,7 +310,7 @@ export default function VoiceRecorderScreen({ navigation }) {
           </Animated.View>
 
           <TouchableOpacity style={styles.secondaryButton} onPress={() => {}}>
-            <Ionicons name="keyboard-outline" size={24} color={theme.colors.textSecondary} />
+            <Ionicons name="keypad-outline" size={24} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.controlLabel}>

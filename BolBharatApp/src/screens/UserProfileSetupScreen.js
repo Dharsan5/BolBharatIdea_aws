@@ -12,7 +12,9 @@ import {
   Platform,
   Easing,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, typography } from '../theme';
+import { saveUser } from '../api/database';
 
 const { width, height } = Dimensions.get('window');
 
@@ -129,9 +131,37 @@ export default function UserProfileSetupScreen({ navigation }) {
     }
   };
 
-  const handleComplete = () => {
-    // TODO: Save profile data to AsyncStorage or backend
-    console.log('Profile Data:', formData);
+  const handleComplete = async () => {
+    try {
+      // Save to local storage
+      await AsyncStorage.setItem('userProfile', JSON.stringify({
+        fullName: formData.name,
+        gender: formData.gender,
+        state: formData.state,
+        district: formData.district,
+        occupation: formData.occupation,
+        monthlyIncome: formData.incomeCategory,
+        familyMembers: formData.familySize,
+        lastUpdated: new Date().toISOString(),
+      }));
+
+      // Save to cloud database
+      const userId = formData.name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
+      await saveUser({
+        userId,
+        name: formData.name,
+        age: formData.age,
+        gender: formData.gender,
+        state: formData.state,
+        district: formData.district,
+        occupation: formData.occupation,
+        incomeCategory: formData.incomeCategory,
+        familySize: formData.familySize,
+      });
+      console.log('Profile saved to database');
+    } catch (err) {
+      console.warn('Error saving profile:', err);
+    }
     navigation.replace('Main');
   };
 

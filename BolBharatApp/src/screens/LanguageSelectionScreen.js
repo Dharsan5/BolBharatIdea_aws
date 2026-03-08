@@ -12,64 +12,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 import BolBharatLogo from '../components/BolBharatLogo';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
-const LANGUAGES = [
-  {
-    id: 'en',
-    name: 'English',
-    nativeName: 'English',
-  },
-  {
-    id: 'hi',
-    name: 'Hindi',
-    nativeName: 'हिन्दी',
-  },
-  {
-    id: 'ta',
-    name: 'Tamil',
-    nativeName: 'தமிழ்',
-  },
-  {
-    id: 'te',
-    name: 'Telugu',
-    nativeName: 'తెలుగు',
-  },
-  {
-    id: 'kn',
-    name: 'Kannada',
-    nativeName: 'ಕನ್ನಡ',
-  },
-  {
-    id: 'ml',
-    name: 'Malayalam',
-    nativeName: 'മലയാളം',
-  },
-  {
-    id: 'mr',
-    name: 'Marathi',
-    nativeName: 'मराठी',
-  },
-  {
-    id: 'bn',
-    name: 'Bengali',
-    nativeName: 'বাংলা',
-  },
-  {
-    id: 'gu',
-    name: 'Gujarati',
-    nativeName: 'ગુજરાતી',
-  },
-  {
-    id: 'pa',
-    name: 'Punjabi',
-    nativeName: 'ਪੰਜਾਬੀ',
-  },
-];
-
 export default function LanguageSelectionScreen({ navigation }) {
-  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const { languages, changeLanguage, currentLanguage } = useLanguage();
+  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage?.id);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -90,13 +39,12 @@ export default function LanguageSelectionScreen({ navigation }) {
     ]).start();
   }, []);
 
-  const handleLanguageSelect = (language) => {
+  const handleLanguageSelect = async (language) => {
     setSelectedLanguage(language.id);
+    await changeLanguage(language.id);
     
     // Animate and navigate after a short delay
     setTimeout(() => {
-      // TODO: Store selected language in AsyncStorage or state management
-      // Navigate to phone authentication
       navigation.replace('PhoneAuth');
     }, 300);
   };
@@ -143,7 +91,7 @@ export default function LanguageSelectionScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.languageGrid}>
-            {LANGUAGES.map((language, index) => (
+            {languages.map((language, index) => (
               <LanguageCard
                 key={language.id}
                 language={language}
@@ -231,13 +179,13 @@ function LanguageCard({ language, isSelected, onSelect, delay }) {
         onPress={handlePress}
         activeOpacity={0.7}
       >
-        {isSelected && <View style={styles.selectedIndicator} />}
+        {isSelected && (
+          <View style={styles.selectedIndicator}>
+            <Ionicons name="checkmark" size={16} color={colors.white} />
+          </View>
+        )}
         <View style={styles.languageIconContainer}>
-          <Ionicons 
-            name="language-outline" 
-            size={32} 
-            color={isSelected ? colors.black : colors.textSecondary} 
-          />
+          <Text style={{ fontSize: 32 }}>{language.flag || '🇮🇳'}</Text>
         </View>
         <Text style={styles.languageNative}>{language.nativeName}</Text>
         <Text style={styles.languageEnglish}>{language.name}</Text>

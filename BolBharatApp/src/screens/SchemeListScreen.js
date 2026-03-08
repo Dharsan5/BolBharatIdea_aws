@@ -141,7 +141,7 @@ const FILTER_CATEGORIES = [
 
 export default function SchemeListScreen({ navigation, route }) {
   const { query = '', category = 'all', userProfile = {} } = route.params || {};
-  const { savedSchemes, toggleScheme } = useSavedSchemes();
+  const { savedSchemeIds, isSchemeSaved, toggleSaveScheme } = useSavedSchemes();
   
   const [schemes, setSchemes] = useState(MOCK_SCHEME_RESULTS);
   const [filteredSchemes, setFilteredSchemes] = useState(MOCK_SCHEME_RESULTS);
@@ -200,42 +200,12 @@ export default function SchemeListScreen({ navigation, route }) {
   };
 
   const renderSchemeCard = ({ item, index }) => {
-    const isSaved = savedSchemes.some(s => s.id === item.id);
+    const isSaved = isSchemeSaved(item.id);
     const relevanceColor = getRelevanceColor(item.relevanceScore);
     const relevanceLabel = getRelevanceLabel(item.relevanceScore);
-    
-    const cardAnim = useRef(new Animated.Value(0)).current;
-    
-    useEffect(() => {
-      Animated.spring(cardAnim, {
-        toValue: 1,
-        delay: index * 100,
-        useNativeDriver: true,
-        tension: 50,
-        friction: 7,
-      }).start();
-    }, []);
-
-    const cardScale = cardAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.9, 1],
-    });
-
-    const cardOpacity = cardAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-    });
 
     return (
-      <Animated.View
-        style={[
-          styles.schemeCard,
-          {
-            transform: [{ scale: cardScale }],
-            opacity: cardOpacity,
-          },
-        ]}
-      >
+      <View style={styles.schemeCard}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => navigation.navigate('SchemeDetail', { schemeId: item.id })}
@@ -261,7 +231,7 @@ export default function SchemeListScreen({ navigation, route }) {
 
             <TouchableOpacity
               style={styles.bookmarkButton}
-              onPress={() => toggleScheme(item)}
+              onPress={() => toggleSaveScheme(item.id)}
             >
               <Ionicons
                 name={isSaved ? 'bookmark' : 'bookmark-outline'}
@@ -336,7 +306,7 @@ export default function SchemeListScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     );
   };
 
@@ -463,7 +433,7 @@ export default function SchemeListScreen({ navigation, route }) {
           <Text style={styles.loadingTextHindi}>आपके लिए सर्वोत्तम योजनाएं खोज रहे हैं...</Text>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={filteredSchemes}
           renderItem={renderSchemeCard}
           keyExtractor={(item) => item.id}

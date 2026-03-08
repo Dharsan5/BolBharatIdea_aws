@@ -108,36 +108,18 @@ export default function LanguageSwitcher({ visible = false, onClose, showAsButto
 
   const renderLanguageOption = (language) => {
     const isSelected = currentLanguage.id === language.id;
-    const optionScale = useRef(new Animated.Value(1)).current;
-
-    const handlePressIn = () => {
-      Animated.spring(optionScale, {
-        toValue: 0.95,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const handlePressOut = () => {
-      Animated.spring(optionScale, {
-        toValue: 1,
-        useNativeDriver: true,
-      }).start();
-    };
 
     return (
-      <Animated.View
+      <View
         key={language.id}
         style={[
           styles.languageOption,
           isSelected && styles.languageOptionSelected,
-          { transform: [{ scale: optionScale }] },
         ]}
       >
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => handleLanguageSelect(language)}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
           style={styles.languageButton}
         >
           <View style={styles.languageInfo}>
@@ -168,68 +150,23 @@ export default function LanguageSwitcher({ visible = false, onClose, showAsButto
             </View>
           )}
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     );
   };
 
-  // Button that opens the modal
-  if (showAsButton) {
-    return (
-      <>
-        <TouchableOpacity
-          style={styles.triggerButton}
-          onPress={handleOpenModal}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name="translate"
-            size={24}
-            color={theme.colors.textPrimary}
-          />
-          <Text style={styles.triggerButtonText}>
-            {currentLanguage.nativeName}
-          </Text>
-          <Ionicons
-            name="chevron-down"
-            size={16}
-            color={theme.colors.textSecondary}
-          />
-        </TouchableOpacity>
-
-        <Modal
-          visible={isModalVisible}
-          transparent
-          animationType="none"
-          onRequestClose={handleCloseModal}
-        >
-          {renderModalContent()}
-        </Modal>
-      </>
-    );
-  }
-
-  // Just the modal (controlled by parent)
-  return (
+  const modalElement = (
     <Modal
       visible={isModalVisible}
       transparent
       animationType="none"
       onRequestClose={handleCloseModal}
     >
-      {renderModalContent()}
-    </Modal>
-  );
-
-  function renderModalContent() {
-    return (
       <View style={styles.modalContainer}>
         {/* Backdrop */}
         <Animated.View
           style={[
             styles.backdrop,
-            {
-              opacity: fadeAnim,
-            },
+            { opacity: fadeAnim },
           ]}
         >
           <TouchableOpacity
@@ -300,8 +237,37 @@ export default function LanguageSwitcher({ visible = false, onClose, showAsButto
           </ScrollView>
         </Animated.View>
       </View>
+    </Modal>
+  );
+
+  if (showAsButton) {
+    return (
+      <>
+        <TouchableOpacity
+          style={styles.triggerButton}
+          onPress={handleOpenModal}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons
+            name="translate"
+            size={24}
+            color={theme.colors.textPrimary}
+          />
+          <Text style={styles.triggerButtonText}>
+            {currentLanguage.nativeName}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={16}
+            color={theme.colors.textSecondary}
+          />
+        </TouchableOpacity>
+        {modalElement}
+      </>
     );
   }
+
+  return modalElement;
 }
 
 const styles = StyleSheet.create({

@@ -1,0 +1,14 @@
+{
+  "java.project.exclusionPaths": [
+    "**/node_modules/**"
+  ],
+  "files.watcherExclude": {
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "java.import.exclusions": [
+    "**/node_modules/**"
+  ]
+}
