@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSelector } from 'react-redux';
+import { saveApplication } from '../api/database';
 import { colors, spacing, typography } from '../theme';
 
 export default function FormConfirmationScreen({ route, navigation }) {
@@ -17,9 +20,13 @@ export default function FormConfirmationScreen({ route, navigation }) {
   const [language, setLanguage] = useState('english');
   const [scaleAnim] = useState(new Animated.Value(0));
   const [fadeAnim] = useState(new Animated.Value(0));
+  const hasSaved = useRef(false);
 
-  // Generate mock reference number
-  const referenceNumber = `BOLB${Date.now().toString().slice(-8)}`;
+  const userProfile = useSelector(state => state.user?.profile);
+  const userId = userProfile?.id || userProfile?.userId || userProfile?.phone || userProfile?.phoneNumber;
+
+  // Generate reference number once and keep it stable
+  const referenceNumber = useRef(`BOLB${Date.now().toString().slice(-8)}`).current;
   const submissionDate = new Date().toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
@@ -32,6 +39,7 @@ export default function FormConfirmationScreen({ route, navigation }) {
   });
 
   useEffect(() => {
+    persistApplication();
     // Success animation
     Animated.sequence([
       Animated.spring(scaleAnim, {
@@ -47,6 +55,49 @@ export default function FormConfirmationScreen({ route, navigation }) {
       }),
     ]).start();
   }, []);
+
+  const persistApplication = async () => {
+    if (hasSaved.current) return;
+    hasSaved.current = true;
+
+    const applicationData = {
+      id: referenceNumber,
+      referenceNumber,
+      formId: formId || 'unknown',
+      formName: formName || 'Application',
+      formNameHindi: formNameHindi || 'आवेदन',
+      schemeName: formName || 'Application',
+      status: 'submitted',
+      submittedDate: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      department: 'Government of India',
+      departmentHindi: 'भारत सरकार',
+    };
+
+    // Save to AsyncStorage for offline access
+    try {
+      const stored = await AsyncStorage.getItem('submittedApplications');
+      const existing = stored ? JSON.parse(stored) : [];
+      const alreadyExists = existing.some(a => a.referenceNumber === referenceNumber);
+      if (!alreadyExists) {
+        await AsyncStorage.setItem(
+          'submittedApplications',
+          JSON.stringify([applicationData, ...existing])
+        );
+      }
+    } catch (err) {
+      console.error('AsyncStorage save error:', err);
+    }
+
+    // Save to backend
+    if (userId) {
+      try {
+        await saveApplication(userId, applicationData);
+      } catch (err) {
+        console.error('Backend save error:', err);
+      }
+    }
+  };
 
   const handleShare = async () => {
     try {

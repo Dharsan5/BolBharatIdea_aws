@@ -19,6 +19,6 @@ export const getUser = (userId) => dbCall('getUser', { userId });
 export const saveConversation = (userId, question, aiResponse, language) =>
   dbCall('saveConversation', { userId, question, aiResponse, language });
 export const getConversations = (userId) => dbCall('getConversations', { userId });
-export const saveApplication = (userId, schemeName) =>
-  dbCall('saveApplication', { userId, schemeName });
+export const saveApplication = (userId, applicationData) =>
+  dbCall('saveApplication', { userId, ...applicationData });
 export const getApplications = (userId) => dbCall('getApplications', { userId });
